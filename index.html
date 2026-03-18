@@ -1,0 +1,3149 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sandbox Fizica</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg-primary: #0f1117;
+            --bg-secondary: #181b24;
+            --bg-panel: #1c1f2b;
+            --bg-card: #232738;
+            --border: #2a2e3d;
+            --text-1: #e8eaf0;
+            --text-2: #8b90a5;
+            --text-3: #5a5f75;
+            --accent: #34d399;
+            --accent-dim: rgba(52, 211, 153, 0.15);
+            --c-greutate: #e63946;
+            --c-normala: #06d6a0;
+            --c-frecare: #ff9f1c;
+            --c-tensiune: #8338ec;
+            --c-elastica: #ff006e;
+            --c-inertie: #adb5bd;
+            --c-drag: #00b4d8;
+            --slider-track: #2a2e3d;
+        }
+
+        body {
+            background: var(--bg-primary);
+            color: var(--text-1);
+            font-family: 'DM Sans', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .banner {
+            background: linear-gradient(90deg, rgba(52,211,153,0.12), rgba(52,211,153,0.04));
+            border-bottom: 1px solid rgba(52,211,153,0.2);
+            padding: 6px 20px;
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; color: var(--accent); flex-shrink: 0;
+        }
+        .banner .dot {
+            width: 6px; height: 6px; background: var(--accent);
+            border-radius: 50%; animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        .main { display: flex; flex: 1; overflow: hidden; position: relative; }
+
+        .scene { flex: 1; position: relative; display: flex; flex-direction: column; }
+        canvas#c { flex: 1; display: block; cursor: grab; }
+        canvas#c:active { cursor: grabbing; }
+
+        .physics-label {
+            position: absolute; left: 50%; top: 80px;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.82); backdrop-filter: blur(10px);
+            border: 1px solid var(--border); border-radius: 10px;
+            padding: 10px 18px; font-size: 13px;
+            pointer-events: none; opacity: 0; transition: opacity 0.35s;
+            max-width: 380px; text-align: center; line-height: 1.5; z-index: 10;
+        }
+        .physics-label.visible { opacity: 1; }
+
+        .obj-info {
+            position: absolute; top: 12px; left: 12px;
+            background: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            border-radius: 8px; padding: 8px 14px;
+            font-size: 12px; color: var(--text-2);
+            display: flex; align-items: center; gap: 8px; z-index: 5;
+        }
+        .obj-info .name { color: var(--text-1); font-weight: 600; }
+
+        .connector-overlay {
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+            border: 1px solid var(--c-tensiune); border-radius: 12px;
+            padding: 16px 28px; font-size: 14px; font-weight: 600;
+            color: var(--c-tensiune); z-index: 20;
+            pointer-events: none; display: none;
+            text-align: center;
+        }
+        .connector-overlay.visible { display: block; }
+
+        .panel {
+            width: 290px; background: var(--bg-panel);
+            border-left: 1px solid var(--border);
+            display: flex; flex-direction: column; flex-shrink: 0; overflow-y: auto;
+        }
+        .panel-hdr {
+            padding: 16px 18px 12px; border-bottom: 1px solid var(--border);
+        }
+        .panel-hdr h2 {
+            font-size: 14px; font-weight: 700;
+            letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-2);
+        }
+
+        .fg {
+            padding: 14px 18px; border-bottom: 1px solid var(--border);
+            transition: background 0.2s;
+        }
+        .fg:hover { background: rgba(255,255,255,0.02); }
+        .fg-row {
+            display: flex; justify-content: space-between;
+            align-items: center; margin-bottom: 8px;
+        }
+        .fg-name {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 600;
+        }
+        .fg-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .fg-val {
+            font-family: 'JetBrains Mono', monospace; font-size: 13px;
+            background: var(--bg-card); padding: 2px 8px;
+            border-radius: 4px; min-width: 52px; text-align: center;
+        }
+        .fg-val.auto {
+            color: var(--text-3); font-style: italic;
+            border: 1px dashed var(--border); background: transparent;
+        }
+        .fg-formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; color: var(--text-3); margin-bottom: 6px;
+        }
+        .auto-tag {
+            display: inline-block; font-size: 10px;
+            background: var(--bg-card); color: var(--text-3);
+            padding: 2px 6px; border-radius: 3px;
+            margin-left: 6px; letter-spacing: 0.3px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none; appearance: none;
+            width: 100%; height: 6px; background: var(--slider-track);
+            border-radius: 3px; outline: none; cursor: pointer;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 16px; height: 16px;
+            border-radius: 50%; background: var(--text-1);
+            border: 2px solid var(--bg-panel);
+            box-shadow: 0 0 6px rgba(0,0,0,0.4);
+            cursor: grab; transition: transform 0.15s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        .obj-section { border-bottom: 1px solid var(--border); }
+        .obj-section-hdr {
+            padding: 12px 18px 8px;
+            font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--accent);
+        }
+        .no-sel-msg {
+            padding: 20px 18px;
+            font-size: 12px; color: var(--text-3);
+            text-align: center; font-style: italic;
+        }
+
+        .add-section {
+            padding: 14px 18px; border-bottom: 1px solid var(--border);
+        }
+        .add-section h3 {
+            font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-3); margin-bottom: 10px;
+        }
+        .add-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+        .add-btn {
+            flex: 1; padding: 8px 6px; min-width: 70px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 6px; color: var(--text-1);
+            font-family: 'DM Sans', sans-serif; font-size: 11px;
+            cursor: pointer; transition: all 0.15s;
+            display: flex; flex-direction: column;
+            align-items: center; gap: 4px;
+        }
+        .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .add-btn .icon { font-size: 18px; line-height: 1; }
+        .preset-scroll { max-height: 340px; overflow-y: auto; padding-right: 4px; }
+        .preset-scroll::-webkit-scrollbar { width: 4px; }
+        .preset-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .preset-cat { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-3); margin: 8px 0 4px; }
+        .preset-cat:first-child { margin-top: 0; }
+        .preset-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-bottom: 6px; }
+        .preset-btn {
+            padding: 5px 4px; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 5px; color: var(--text-1); font-family: 'DM Sans', sans-serif;
+            font-size: 10px; cursor: pointer; transition: all 0.15s;
+            display: flex; flex-direction: column; align-items: center; gap: 2px;
+            white-space: nowrap; overflow: hidden;
+        }
+        .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+        .preset-btn .pi { font-size: 15px; line-height: 1; }
+        .add-btn.connector-btn:hover { border-color: var(--c-tensiune); color: var(--c-tensiune); }
+        .add-btn.connector-btn.active-mode { border-color: var(--c-tensiune); color: var(--c-tensiune); background: rgba(167,139,250,0.15); }
+
+        .conn-section { border-bottom: 1px solid var(--border); }
+        .conn-section-hdr {
+            padding: 12px 18px 8px;
+            font-size: 12px; font-weight: 700;
+            text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--c-tensiune);
+        }
+        .del-conn-btn {
+            margin: 8px 18px 14px; padding: 6px 14px;
+            background: transparent; border: 1px solid #ef4444;
+            border-radius: 6px; color: #ef4444;
+            font-family: 'DM Sans', sans-serif; font-size: 11px;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .del-conn-btn:hover { background: rgba(239,68,68,0.15); }
+        .del-obj-btn {
+            margin-top: 10px; padding: 6px 14px; width: 100%;
+            background: transparent; border: 1px solid #ef4444;
+            border-radius: 6px; color: #ef4444;
+            font-family: 'DM Sans', sans-serif; font-size: 11px;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .del-obj-btn:hover { background: rgba(239,68,68,0.15); }
+        .scale-row { display: flex; gap: 6px; align-items: center; margin: 8px 0 6px; padding-top: 8px; border-top: 1px solid var(--border); }
+        .scale-row label { font-size: 10px; color: var(--text-2); width: 40px; flex-shrink: 0; }
+
+        .scenarios { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+        .scenarios h3 {
+            font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-3); margin-bottom: 10px;
+        }
+        .sc-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 8px; padding: 10px 12px; margin-bottom: 6px;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .sc-card:hover { border-color: var(--text-3); transform: translateX(2px); }
+        .sc-title { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+        .sc-desc { font-size: 11px; color: var(--text-3); line-height: 1.4; }
+
+        .legend { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+        .legend h3 {
+            font-size: 11px; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--text-3); margin-bottom: 10px;
+        }
+        .legend-item {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 12px; color: var(--text-2); padding: 3px 0;
+        }
+        .legend-line { width: 18px; height: 3px; border-radius: 1px; }
+
+        .reset-btn {
+            padding: 8px 14px; background: var(--bg-card);
+            border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text-2); font-family: 'DM Sans', sans-serif;
+            font-size: 12px; cursor: pointer; transition: all 0.15s;
+            margin: 14px 18px;
+        }
+        .reset-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+        .timeline {
+            height: 56px; background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+            display: flex; align-items: center;
+            padding: 0 16px; gap: 12px; flex-shrink: 0;
+        }
+        .t-btn {
+            width: 34px; height: 34px; border-radius: 8px;
+            background: var(--bg-card); border: 1px solid var(--border);
+            color: var(--text-1); display: flex; align-items: center;
+            justify-content: center; cursor: pointer; font-size: 14px;
+            transition: all 0.15s; flex-shrink: 0;
+        }
+        .t-btn:hover { background: var(--border); }
+        .t-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+        .tl-wrap { flex: 1; display: flex; align-items: center; gap: 10px; }
+        .t-disp {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px; color: var(--text-2);
+            min-width: 48px; text-align: center;
+        }
+        #tSlider {
+            flex: 1; height: 4px;
+            background: linear-gradient(to right, var(--accent) 0%, var(--accent) var(--prog,0%), var(--slider-track) var(--prog,0%));
+        }
+        #tSlider::-webkit-slider-thumb {
+            width: 14px; height: 14px;
+            background: var(--accent); border: 2px solid var(--bg-secondary);
+        }
+        .spd-sel { display: flex; gap: 2px; flex-shrink: 0; }
+        .spd-btn {
+            padding: 4px 8px; border-radius: 4px;
+            background: transparent; border: 1px solid transparent;
+            color: var(--text-3); font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; cursor: pointer; transition: all 0.15s;
+        }
+        .spd-btn:hover { color: var(--text-2); }
+        .spd-btn.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(52,211,153,0.25); }
+
+        .tl-sep {
+            width: 1px; height: 24px; background: var(--border);
+            flex-shrink: 0; margin: 0 4px;
+        }
+        .dur-sel { display: flex; gap: 2px; flex-shrink: 0; align-items: center; }
+        .dur-label {
+            font-size: 10px; color: var(--text-3); margin-right: 4px;
+            font-family: 'JetBrains Mono', monospace; letter-spacing: 0.3px;
+        }
+        .dur-btn {
+            padding: 4px 7px; border-radius: 4px;
+            background: transparent; border: 1px solid transparent;
+            color: var(--text-3); font-family: 'JetBrains Mono', monospace;
+            font-size: 11px; cursor: pointer; transition: all 0.15s;
+        }
+        .dur-btn:hover { color: var(--text-2); }
+        .dur-btn.active { color: #facc15; background: rgba(250,204,21,0.12); border-color: rgba(250,204,21,0.25); }
+
+        .zoom-controls {
+            position: absolute; bottom: 40px; left: 12px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+            border-radius: 8px; padding: 6px 10px;
+            z-index: 5; display: flex; align-items: center; gap: 6px;
+        }
+        .zoom-controls label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; color: var(--text-3);
+        }
+        .zoom-controls input[type="range"] {
+            width: 90px; height: 4px;
+        }
+        .zoom-controls .zoom-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; color: var(--text-2); min-width: 32px; text-align: center;
+        }
+        .zoom-controls button {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 4px; color: var(--text-2); font-size: 12px;
+            width: 22px; height: 22px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .zoom-controls button:hover { border-color: var(--accent); color: var(--accent); }
+
+        .cam-indicator {
+            position: absolute; bottom: 8px; left: 12px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+            border-radius: 6px; padding: 4px 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px; color: var(--text-3);
+            pointer-events: none; z-index: 5;
+            display: flex; align-items: center; gap: 6px;
+            transition: opacity 0.3s;
+        }
+        .cam-indicator .cam-hint { color: var(--text-3); opacity: 0.6; }
+        .cam-recenter {
+            position: absolute; bottom: 8px; right: 12px;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(6px);
+            border: 1px solid var(--border); border-radius: 6px;
+            padding: 4px 10px; font-family: 'DM Sans', sans-serif;
+            font-size: 10px; color: var(--text-3); cursor: pointer;
+            z-index: 5; transition: all 0.2s; display: none;
+        }
+        .cam-recenter:hover { color: var(--accent); border-color: var(--accent); }
+        .cam-recenter.visible { display: block; }
+
+        /* Checkbox styling */
+        .anchor-toggle {
+            display: flex; align-items: center; gap: 10px;
+            cursor: pointer; font-size: 13px; font-weight: 600;
+            padding: 10px 18px; border-bottom: 1px solid var(--border);
+        }
+        .anchor-toggle input[type="checkbox"] {
+            width: 16px; height: 16px; accent-color: var(--accent);
+            cursor: pointer;
+        }
+        .anchor-badge {
+            display: inline-block; font-size: 9px;
+            background: rgba(52,211,153,0.2); color: var(--accent);
+            padding: 1px 5px; border-radius: 3px; margin-left: 4px;
+        }
+
+        .panel::-webkit-scrollbar { width: 4px; }
+        .panel::-webkit-scrollbar-track { background: transparent; }
+        .panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        /* Tema selector */
+        .theme-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .theme-btn {
+            padding: 8px 6px; background: var(--bg-card); border: 2px solid var(--border);
+            border-radius: 8px; cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; align-items: center; gap: 4px;
+            font-family: 'DM Sans', sans-serif;
+        }
+        .theme-btn:hover { border-color: var(--accent); }
+        .theme-btn.active { border-color: var(--accent); background: var(--accent-dim); }
+        .theme-btn .theme-preview {
+            width: 100%; height: 28px; border-radius: 4px; overflow: hidden;
+            position: relative;
+        }
+        .theme-btn .theme-name { font-size: 10px; color: var(--text-2); font-weight: 600; }
+        .theme-btn.active .theme-name { color: var(--accent); }
+
+        /* Toggle panel button (vizibil doar pe ecrane mici) */
+        .panel-toggle {
+            display: none;
+            position: absolute; top: 50%; right: 0;
+            transform: translateY(-50%);
+            z-index: 30; background: var(--bg-panel);
+            border: 1px solid var(--border); border-right: none;
+            border-radius: 8px 0 0 8px;
+            padding: 12px 6px; cursor: pointer;
+            color: var(--text-2); font-size: 16px;
+            writing-mode: vertical-rl; letter-spacing: 2px;
+            font-family: 'DM Sans', sans-serif; font-size: 11px;
+            font-weight: 600;
+        }
+        .panel-toggle:hover { color: var(--accent); border-color: var(--accent); }
+        .panel-toggle.open { right: 0; }
+
+        /* ============ Responsive ============ */
+        @media (max-width: 1100px) {
+            .panel { width: 260px; }
+            .fg { padding: 10px 14px; }
+            .fg-name { font-size: 12px; }
+            .fg-val { font-size: 12px; min-width: 44px; padding: 2px 6px; }
+            .panel-hdr { padding: 12px 14px 10px; }
+            .add-section { padding: 10px 14px; }
+            .preset-grid { grid-template-columns: repeat(3, 1fr); gap: 3px; }
+        }
+
+        @media (max-width: 850px) {
+            .panel-toggle { display: block; }
+            .panel {
+                position: absolute; top: 0; right: 0; bottom: 0;
+                width: 280px; z-index: 25;
+                transform: translateX(100%);
+                transition: transform 0.3s ease;
+                box-shadow: -4px 0 20px rgba(0,0,0,0.5);
+            }
+            .panel.visible { transform: translateX(0); }
+            .scene { width: 100%; }
+            .banner { font-size: 12px; padding: 4px 12px; }
+            .banner span:last-child { display: none; }
+            .obj-info { font-size: 11px; padding: 6px 10px; }
+        }
+
+        @media (max-width: 600px) {
+            .panel { width: 240px; }
+            .fg { padding: 8px 10px; }
+            .fg-name { font-size: 11px; }
+            .fg-val { font-size: 11px; min-width: 38px; }
+            .fg-formula { font-size: 10px; }
+            .panel-hdr h2 { font-size: 12px; }
+            .add-section { padding: 8px 10px; }
+            .add-section h3 { font-size: 10px; }
+            .preset-grid { grid-template-columns: repeat(2, 1fr); }
+            .preset-btn { font-size: 9px; padding: 4px 3px; }
+            .preset-btn .pi { font-size: 13px; }
+            .zoom-controls { bottom: 32px; padding: 4px 6px; }
+            .zoom-controls input[type="range"] { width: 60px; }
+            .cam-indicator { font-size: 9px; }
+            .obj-info { top: 6px; left: 6px; font-size: 10px; padding: 4px 8px; }
+            .anchor-toggle { font-size: 12px; padding: 8px 10px; }
+            input[type="range"]::-webkit-slider-thumb { width: 14px; height: 14px; }
+        }
+
+        @media (max-height: 500px) {
+            .banner { display: none; }
+            .preset-scroll { max-height: 180px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="banner">
+    <span class="dot"></span>
+    <span>Sandbox fizica — mod explorare</span>
+</div>
+
+<div class="main">
+    <div class="scene">
+        <canvas id="c"></canvas>
+        <div class="obj-info">
+            <span>Obiect selectat:</span>
+            <span class="name" id="selName">Niciun obiect</span>
+        </div>
+        <div class="physics-label" id="physLabel"></div>
+        <div class="connector-overlay" id="connOverlay">Click pe primul obiect</div>
+        <div class="zoom-controls">
+            <button onclick="setZoom(cam.zoom - 0.1)">−</button>
+            <input type="range" id="sZoom" min="0.2" max="3" step="0.05" value="1">
+            <button onclick="setZoom(cam.zoom + 0.1)">+</button>
+            <span class="zoom-val" id="vZoom">1.0x</span>
+        </div>
+        <div class="cam-indicator" id="camIndicator">
+            <span id="camPos">x: 0.0m</span>
+            <span class="cam-hint">click-dreapta + drag = pan</span>
+        </div>
+        <button class="cam-recenter" id="camRecenter" onclick="recenterCamera()">Recentreaza</button>
+        <button class="panel-toggle" id="panelToggle" onclick="togglePanel()">☰ Meniu</button>
+    </div>
+
+    <div class="panel" id="sidePanel">
+        <div class="panel-hdr"><h2>Forte</h2></div>
+
+        <!-- Gravitatie — GLOBAL -->
+        <div class="fg">
+            <div class="fg-row">
+                <span class="fg-name">
+                    <span class="fg-dot" style="background:var(--c-greutate)"></span>
+                    Greutate (g)
+                    <span class="auto-tag">GLOBAL</span>
+                </span>
+                <span class="fg-val" id="vG">9.81</span>
+            </div>
+            <div class="fg-formula">F = m &middot; g</div>
+            <input type="range" id="sG" min="0" max="25" step="0.1" value="9.81">
+        </div>
+
+        <!-- Rezistenta aer — GLOBAL -->
+        <div class="fg">
+            <div class="fg-row">
+                <span class="fg-name">
+                    <span class="fg-dot" style="background:var(--c-drag)"></span>
+                    Rezistenta aer (Cd)
+                    <span class="auto-tag">GLOBAL</span>
+                </span>
+                <span class="fg-val" id="vCd">0.47</span>
+            </div>
+            <div class="fg-formula">F = -&frac12;&middot;Cd&middot;&rho;&middot;A&middot;v&sup2;</div>
+            <input type="range" id="sCd" min="0" max="2" step="0.01" value="0.47">
+        </div>
+
+        <!-- Normala — AUTO -->
+        <div class="fg">
+            <div class="fg-row">
+                <span class="fg-name">
+                    <span class="fg-dot" style="background:var(--c-normala)"></span>
+                    Normala (N)
+                    <span class="auto-tag">AUTO</span>
+                </span>
+                <span class="fg-val auto" id="vN">0.0</span>
+            </div>
+            <div class="fg-formula">N = m &middot; g (pe suprafata)</div>
+        </div>
+
+        <!-- Inertie — AUTO -->
+        <div class="fg">
+            <div class="fg-row">
+                <span class="fg-name">
+                    <span class="fg-dot" style="background:var(--c-inertie)"></span>
+                    Inertie (ma)
+                    <span class="auto-tag">AUTO</span>
+                </span>
+                <span class="fg-val auto" id="vI">0.0</span>
+            </div>
+            <div class="fg-formula">F = m &middot; a (rezultanta)</div>
+        </div>
+
+        <!-- SECTIUNE DINAMICA — proprietati obiect selectat -->
+        <div class="obj-section" id="objSection">
+            <div class="no-sel-msg" id="noSelMsg">Selecteaza un obiect pentru a-i vedea proprietatile</div>
+            <div id="objProps" style="display:none">
+                <div class="obj-section-hdr" id="objPropsTitle">Proprietati obiect</div>
+
+                <!-- Masa -->
+                <div class="fg">
+                    <div class="fg-row">
+                        <span class="fg-name">Masa (kg)</span>
+                        <span class="fg-val" id="vMasa">10</span>
+                    </div>
+                    <input type="range" id="sMasa" min="1" max="100" step="1" value="10">
+                </div>
+
+                <!-- Viteza initiala X -->
+                <div class="fg">
+                    <div class="fg-row">
+                        <span class="fg-name">Viteza init. X (m/s)</span>
+                        <span class="fg-val" id="vVx">0</span>
+                    </div>
+                    <input type="range" id="sVx" min="-200" max="200" step="1" value="0">
+                </div>
+
+                <!-- Viteza initiala Y -->
+                <div class="fg">
+                    <div class="fg-row">
+                        <span class="fg-name">Viteza init. Y (m/s)</span>
+                        <span class="fg-val" id="vVy">0</span>
+                    </div>
+                    <input type="range" id="sVy" min="-200" max="200" step="1" value="0">
+                </div>
+
+                <!-- Frecare -->
+                <div class="fg">
+                    <div class="fg-row">
+                        <span class="fg-name">
+                            <span class="fg-dot" style="background:var(--c-frecare)"></span>
+                            Frecare (&mu;)
+                        </span>
+                        <span class="fg-val" id="vFr">0.30</span>
+                    </div>
+                    <div class="fg-formula">F = &mu; &middot; N</div>
+                    <input type="range" id="sFr" min="0" max="2" step="0.01" value="0.30">
+                </div>
+
+                <!-- Ancorat -->
+                <label class="anchor-toggle">
+                    <input type="checkbox" id="chkAncorat">
+                    <span>Ancorat (pozitie fixa)</span>
+                </label>
+
+                <!-- Scala -->
+                <div class="scale-row">
+                    <label>Scala</label>
+                    <input type="range" id="sScala" min="0.1" max="10" step="0.1" value="1" style="flex:1">
+                    <span class="fg-val" id="vScala" style="width:35px;text-align:center">1.0x</span>
+                </div>
+
+                <button class="del-obj-btn" onclick="stergeObiectSelectat()">&#128465; Sterge obiect</button>
+            </div>
+        </div>
+
+        <!-- Sectiune conector selectat -->
+        <div class="conn-section" id="connSection" style="display:none">
+            <div class="conn-section-hdr" id="connPropsTitle">Conector</div>
+
+            <!-- Forta activa — Tensiune sau Elastica -->
+            <div class="fg" id="connForceSection">
+                <div class="fg-row">
+                    <span class="fg-name" id="connForceName">
+                        <span class="fg-dot" id="connForceDot" style="background:var(--c-tensiune)"></span>
+                        <span id="connForceLabel">Tensiunea in fir</span>
+                    </span>
+                    <span class="fg-val" id="vConnForce">0.0</span>
+                </div>
+                <div class="fg-formula" id="connForceFormula">F = k &middot; &Delta;L (cand intinsa)</div>
+            </div>
+
+            <!-- Lungime naturala -->
+            <div class="fg">
+                <div class="fg-row">
+                    <span class="fg-name">Lungime naturala (px)</span>
+                    <span class="fg-val" id="vConnLen">100</span>
+                </div>
+                <input type="range" id="sConnLen" min="20" max="400" step="1" value="100">
+            </div>
+
+            <!-- Rigiditate — doar resort -->
+            <div class="fg" id="connKSection">
+                <div class="fg-row">
+                    <span class="fg-name">
+                        <span class="fg-dot" style="background:var(--c-elastica)"></span>
+                        Rigiditate (k)
+                    </span>
+                    <span class="fg-val" id="vConnK">50</span>
+                </div>
+                <div class="fg-formula">F = &minus;k &middot; &Delta;x</div>
+                <input type="range" id="sConnK" min="1" max="500" step="1" value="50">
+            </div>
+            <button class="del-conn-btn" onclick="stergeConectorSelectat()">Sterge conector</button>
+        </div>
+
+        <!-- Adauga obiect -->
+        <div class="add-section">
+            <h3>Adauga obiect</h3>
+            <div class="preset-scroll" id="presetGrid"></div>
+        </div>
+
+        <!-- Conectori -->
+        <div class="add-section">
+            <h3>Conectori</h3>
+            <div class="add-btns">
+                <button class="add-btn connector-btn" id="btnSfoara" onclick="incepeConector('sfoara')">
+                    <span class="icon">&#8212;</span> Sfoara
+                </button>
+                <button class="add-btn connector-btn" id="btnResort" onclick="incepeConector('resort')">
+                    <span class="icon">&#8767;</span> Resort
+                </button>
+            </div>
+        </div>
+
+        <!-- Scenarii -->
+        <div class="scenarios">
+            <h3>Scenarii</h3>
+            <div class="sc-card" onclick="aplicaScenariu('luna')">
+                <div class="sc-title">Pe Luna</div>
+                <div class="sc-desc">g = 1.62 m/s&sup2; — gravitatie redusa</div>
+            </div>
+            <div class="sc-card" onclick="aplicaScenariu('gheata')">
+                <div class="sc-title">Gheata perfecta</div>
+                <div class="sc-desc">&mu; = 0.01 pe toate obiectele</div>
+            </div>
+            <div class="sc-card" onclick="aplicaScenariu('jupiter')">
+                <div class="sc-title">Pe Jupiter</div>
+                <div class="sc-desc">g = 24.8 m/s&sup2; — gravitatie extrema</div>
+            </div>
+            <div class="sc-card" onclick="aplicaScenariu('vid')">
+                <div class="sc-title">Vid (fara aer)</div>
+                <div class="sc-desc">Cd = 0 — cadere libera, masa nu conteaza</div>
+            </div>
+        </div>
+
+        <!-- Tema -->
+        <div class="add-section">
+            <h3>Tema</h3>
+            <div class="theme-grid" id="themeGrid"></div>
+        </div>
+
+        <!-- Legenda -->
+        <div class="legend">
+            <h3>Legenda vectori</h3>
+            <div class="legend-item"><span class="legend-line" style="background:var(--c-greutate)"></span> Greutate</div>
+            <div class="legend-item"><span class="legend-line" style="background:var(--c-normala)"></span> Normala</div>
+            <div class="legend-item"><span class="legend-line" style="background:var(--c-frecare)"></span> Frecare</div>
+            <div class="legend-item"><span class="legend-line" style="background:var(--c-tensiune)"></span> Tensiune</div>
+            <div class="legend-item"><span class="legend-line" style="background:var(--c-elastica)"></span> Elastica</div>
+            <div class="legend-item"><span class="legend-line" style="background:var(--c-drag)"></span> Rezistenta aer</div>
+            <div class="legend-item"><span class="legend-line" style="background:var(--c-inertie)"></span> Inertie</div>
+        </div>
+
+        <button class="reset-btn" onclick="reseteaza()">Resetare</button>
+    </div>
+</div>
+
+<div class="timeline">
+    <button class="t-btn" id="btnPlay" onclick="togglePlay()">&#9654;</button>
+    <button class="t-btn" onclick="laInceput()">&#9198;</button>
+    <div class="tl-wrap">
+        <span class="t-disp" id="tDisp">0.00s</span>
+        <input type="range" id="tSlider" min="0" max="1000" value="0" step="1">
+        <span class="t-disp" id="tDurDisp">25.0s</span>
+    </div>
+    <div class="tl-sep"></div>
+    <div class="dur-sel">
+        <span class="dur-label">Durata:</span>
+        <button class="dur-btn" onclick="setDurata(10)">10s</button>
+        <button class="dur-btn active" onclick="setDurata(25)">25s</button>
+        <button class="dur-btn" onclick="setDurata(60)">60s</button>
+        <button class="dur-btn" onclick="setDurata(120)">2m</button>
+        <button class="dur-btn" onclick="setDurata(300)">5m</button>
+    </div>
+    <div class="tl-sep"></div>
+    <div class="spd-sel">
+        <button class="spd-btn" onclick="setViteza(0.25)">0.25x</button>
+        <button class="spd-btn" onclick="setViteza(0.5)">0.5x</button>
+        <button class="spd-btn active" onclick="setViteza(1)">1x</button>
+        <button class="spd-btn" onclick="setViteza(2)">2x</button>
+    </div>
+</div>
+
+<script>
+// ============================================
+//  SANDBOX FIZICA — Motor fizic 2D
+//  Forte: Greutate, Normala, Frecare, Tensiune,
+//         Elastica, Inertie, Rezistenta aer
+//  Conectori (sfoara + resort), Coliziuni,
+//  Obiecte ancorate, Masa editabila
+// ============================================
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// Polyfill roundRect daca lipseste
+if (!ctx.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+        if (typeof r === 'number') r = [r, r, r, r];
+        this.moveTo(x + r[0], y);
+        this.lineTo(x + w - r[1], y);
+        this.quadraticCurveTo(x + w, y, x + w, y + r[1]);
+        this.lineTo(x + w, y + h - r[2]);
+        this.quadraticCurveTo(x + w, y + h, x + w - r[2], y + h);
+        this.lineTo(x + r[3], y + h);
+        this.quadraticCurveTo(x, y + h, x, y + h - r[3]);
+        this.lineTo(x, y + r[0]);
+        this.quadraticCurveTo(x, y, x + r[0], y);
+        this.closePath();
+    };
+}
+
+function resizeCanvas() {
+    const r = canvas.parentElement.getBoundingClientRect();
+    canvas.width = r.width * devicePixelRatio;
+    canvas.height = r.height * devicePixelRatio;
+    canvas.style.width = r.width + 'px';
+    canvas.style.height = r.height + 'px';
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Culorile vectorilor — distincte, nu se folosesc la obiecte
+const COL = {
+    greutate: '#e63946',  // rosu intens — greutatea trage in jos
+    normala: '#06d6a0',   // verde-turcoaz — normala sustine
+    frecare: '#ff9f1c',   // portocaliu aprins — frecare se opune miscarii
+    tensiune: '#8338ec',  // violet intens — tensiune in fir
+    elastica: '#ff006e',  // magenta — forta elastica
+    inertie: '#adb5bd',   // gri — forta neta (ma)
+    drag: '#00b4d8',      // albastru-cyan — rezistenta aer
+    v0: '#ffd60a'         // galben — viteza initiala
+};
+
+// Culorile obiectelor — complet separate de vectori
+const CULORI_OBJ = ['#7ec8e3','#c9ada7','#b5e48c','#ddb892','#a2d2ff','#cdb4db','#bde0fe','#ffc8dd'];
+let culoareIdx = 0;
+
+// --- Teme vizuale ---
+const TEME = {
+    laborator: {
+        nume: 'Laborator',
+        icon: '🔬',
+        skyColors: ['#0f1117', '#0f1117'],
+        groundFill: '#1a2a1a',
+        groundStroke: '#2a4a2a',
+        groundGrass: 'rgba(52,211,153,0.15)',
+        gridColor: 'rgba(42,46,61,0.5)',
+        originColor: 'rgba(52,211,153,0.25)',
+        scaleColor: 'rgba(255,255,255,0.08)',
+        previewTop: '#0f1117', previewBot: '#1a2a1a',
+        decor: null
+    },
+    zi: {
+        nume: 'Zi senina',
+        icon: '☀️',
+        skyColors: ['#1a8fdd', '#87ceeb', '#c8e6f5'],
+        groundFill: '#4a7c3f',
+        groundStroke: '#3d6b34',
+        groundGrass: 'rgba(100,180,60,0.35)',
+        gridColor: 'rgba(0,0,0,0.06)',
+        originColor: 'rgba(0,0,0,0.15)',
+        scaleColor: 'rgba(0,0,0,0.2)',
+        previewTop: '#1a8fdd', previewBot: '#4a7c3f',
+        decor: 'zi'
+    },
+    apus: {
+        nume: 'Apus',
+        icon: '🌅',
+        skyColors: ['#1a0533', '#6b2fa0', '#d4596e', '#f4a742'],
+        groundFill: '#2d1a0e',
+        groundStroke: '#5c3a1e',
+        groundGrass: 'rgba(180,120,60,0.2)',
+        gridColor: 'rgba(0,0,0,0.08)',
+        originColor: 'rgba(255,200,100,0.2)',
+        scaleColor: 'rgba(255,220,180,0.15)',
+        previewTop: '#6b2fa0', previewBot: '#2d1a0e',
+        decor: 'apus'
+    },
+    noapte: {
+        nume: 'Noapte',
+        icon: '🌙',
+        skyColors: ['#020111', '#0a0e2a', '#131842'],
+        groundFill: '#0d1a0d',
+        groundStroke: '#1a2e1a',
+        groundGrass: 'rgba(30,80,30,0.2)',
+        gridColor: 'rgba(40,50,80,0.3)',
+        originColor: 'rgba(100,150,255,0.15)',
+        scaleColor: 'rgba(150,180,255,0.1)',
+        previewTop: '#0a0e2a', previewBot: '#0d1a0d',
+        decor: 'noapte'
+    },
+    desert: {
+        nume: 'Desert',
+        icon: '🏜️',
+        skyColors: ['#2980b9', '#85c1e9', '#f9e7a1'],
+        groundFill: '#c2a24d',
+        groundStroke: '#a8893a',
+        groundGrass: 'rgba(180,150,80,0.25)',
+        gridColor: 'rgba(0,0,0,0.06)',
+        originColor: 'rgba(0,0,0,0.12)',
+        scaleColor: 'rgba(80,50,10,0.2)',
+        previewTop: '#2980b9', previewBot: '#c2a24d',
+        decor: 'desert'
+    }
+};
+let temaActuala = 'laborator';
+
+function setTema(id) {
+    if (!TEME[id]) return;
+    temaActuala = id;
+    // Update UI
+    document.querySelectorAll('.theme-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.tema === id);
+    });
+}
+
+function construiesteGridTeme() {
+    const container = document.getElementById('themeGrid');
+    if (!container) return;
+    let html = '';
+    Object.keys(TEME).forEach(id => {
+        const t = TEME[id];
+        const active = id === temaActuala ? ' active' : '';
+        html += '<button class="theme-btn' + active + '" data-tema="' + id + '" onclick="setTema(\'' + id + '\')">' +
+            '<div class="theme-preview" style="background:linear-gradient(to bottom,' + t.previewTop + ',' + t.previewBot + ')"></div>' +
+            '<span class="theme-name">' + t.icon + ' ' + t.nume + '</span></button>';
+    });
+    container.innerHTML = html;
+}
+
+// Deseneaza decoratiunile temei (soare, stele, luna, etc)
+function deseneazaDecorTema(w, h, sol, vLeft, vRight, vTop, vBot, z) {
+    const t = TEME[temaActuala];
+    if (!t || !t.decor) return;
+
+    if (t.decor === 'zi') {
+        // Soare
+        const sunX = vRight - 120 / z, sunY = vTop + 80 / z;
+        const sunR = 35 / z;
+        // Halo
+        const glow = ctx.createRadialGradient(sunX, sunY, sunR * 0.3, sunX, sunY, sunR * 3);
+        glow.addColorStop(0, 'rgba(255,240,100,0.4)');
+        glow.addColorStop(0.5, 'rgba(255,200,50,0.1)');
+        glow.addColorStop(1, 'rgba(255,200,50,0)');
+        ctx.fillStyle = glow; ctx.fillRect(sunX - sunR * 3, sunY - sunR * 3, sunR * 6, sunR * 6);
+        // Disc
+        ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffe066'; ctx.fill();
+        ctx.beginPath(); ctx.arc(sunX, sunY, sunR * 0.7, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff4b0'; ctx.fill();
+        // Nori
+        desenNor(vLeft + 100 / z, vTop + 60 / z, 50 / z, 0.6);
+        desenNor(vLeft + 300 / z, vTop + 40 / z, 40 / z, 0.4);
+        desenNor(vRight - 350 / z, vTop + 90 / z, 55 / z, 0.5);
+    }
+
+    if (t.decor === 'apus') {
+        // Soare la orizont
+        const sunX = (vLeft + vRight) / 2, sunY = sol - 10 / z;
+        const sunR = 45 / z;
+        const glow = ctx.createRadialGradient(sunX, sunY, sunR * 0.5, sunX, sunY, sunR * 4);
+        glow.addColorStop(0, 'rgba(255,180,50,0.5)');
+        glow.addColorStop(0.4, 'rgba(255,100,50,0.15)');
+        glow.addColorStop(1, 'rgba(255,50,50,0)');
+        ctx.fillStyle = glow; ctx.fillRect(sunX - sunR * 4, sunY - sunR * 4, sunR * 8, sunR * 8);
+        ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+        ctx.fillStyle = '#ff8833'; ctx.fill();
+    }
+
+    if (t.decor === 'noapte') {
+        // Luna
+        const moonX = vRight - 100 / z, moonY = vTop + 70 / z;
+        const moonR = 22 / z;
+        ctx.beginPath(); ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
+        ctx.fillStyle = '#e8e0d0'; ctx.fill();
+        // Crater efect
+        ctx.beginPath(); ctx.arc(moonX + moonR * 0.35, moonY - moonR * 0.1, moonR * 0.85, 0, Math.PI * 2);
+        ctx.fillStyle = '#131842'; ctx.fill();
+        // Stele
+        const seed = 42;
+        for (let i = 0; i < 60; i++) {
+            const sx = vLeft + ((seed * (i + 1) * 7919) % 10000) / 10000 * (vRight - vLeft);
+            const sy = vTop + ((seed * (i + 1) * 6271) % 10000) / 10000 * (sol - vTop) * 0.8;
+            const sr = (0.5 + ((seed * (i + 1) * 3571) % 100) / 100 * 1.5) / z;
+            const alpha = 0.3 + ((seed * (i + 1) * 4793) % 100) / 100 * 0.7;
+            ctx.beginPath(); ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(200,220,255,' + alpha + ')'; ctx.fill();
+        }
+    }
+
+    if (t.decor === 'desert') {
+        // Soare arzator
+        const sunX = vRight - 140 / z, sunY = vTop + 90 / z;
+        const sunR = 40 / z;
+        const glow = ctx.createRadialGradient(sunX, sunY, sunR * 0.3, sunX, sunY, sunR * 3.5);
+        glow.addColorStop(0, 'rgba(255,240,100,0.5)');
+        glow.addColorStop(0.5, 'rgba(255,200,50,0.15)');
+        glow.addColorStop(1, 'rgba(255,200,50,0)');
+        ctx.fillStyle = glow; ctx.fillRect(sunX - sunR * 4, sunY - sunR * 4, sunR * 8, sunR * 8);
+        ctx.beginPath(); ctx.arc(sunX, sunY, sunR, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffe44d'; ctx.fill();
+        // Dune shapes in ground
+        ctx.strokeStyle = 'rgba(160,120,50,0.3)'; ctx.lineWidth = 1.5 / z;
+        for (let dx = Math.floor(vLeft / 120) * 120; dx < vRight; dx += 120) {
+            ctx.beginPath();
+            ctx.moveTo(dx, sol + 5);
+            ctx.quadraticCurveTo(dx + 60, sol + 18 / z, dx + 120, sol + 5);
+            ctx.stroke();
+        }
+    }
+}
+
+function desenNor(x, y, w, alpha) {
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(x, y, w * 0.4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + w * 0.35, y - w * 0.1, w * 0.3, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x - w * 0.3, y + w * 0.05, w * 0.25, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x + w * 0.15, y + w * 0.15, w * 0.28, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = 1;
+}
+
+const cam = { x: 0, y: 0, zoom: 1 };
+
+const sim = {
+    timp: 0, activa: false, viteza: 1,
+    dt: 1 / 60, tMax: 25,
+    g: 9.81,   // GLOBAL
+    Cd: 0.47,  // GLOBAL — coeficient drag aerian
+    sel: -1
+};
+
+let obiecte = [];
+let conexiuni = [];
+let selConn = -1;
+let modConector = null;
+
+// --- Aria sectiunii transversale (pt drag) ---
+function arieOb(ob) {
+    if (ob.tip === 'sfera') return Math.PI * ob.raza * ob.raza;
+    if (ob.tip === 'triunghi') return 0.5 * ob.w * ob.h;
+    return ob.w * ob.h; // bloc
+}
+
+// --- Preseturi obiecte ---
+const PRESETURI = [
+    // Forme de baza
+    { cat: 'Forme de baza', nume: 'Cub', icon: '\u25A0', tip: 'bloc', masa: 10, w: 60, h: 50, mu: 0.40 },
+    { cat: 'Forme de baza', nume: 'Triunghi', icon: '\u25B2', tip: 'triunghi', masa: 7, w: 60, h: 52, mu: 0.35 },
+    { cat: 'Forme de baza', nume: 'Cerc', icon: '\u25CF', tip: 'sfera', masa: 5, raza: 25, mu: 0.30 },
+
+    // Blocuri & Dreptunghiuri
+    { cat: 'Blocuri', nume: 'Dreptunghi', icon: '\u25AC', tip: 'bloc', masa: 15, w: 100, h: 40, mu: 0.40 },
+    { cat: 'Blocuri', nume: 'Cutie mica', icon: '\u25FD', tip: 'bloc', masa: 3, w: 30, h: 30, mu: 0.35, culoare: '#b0976d' },
+    { cat: 'Blocuri', nume: 'Cutie mare', icon: '\u2B1C', tip: 'bloc', masa: 30, w: 90, h: 75, mu: 0.35, culoare: '#b0976d' },
+    { cat: 'Blocuri', nume: 'Bara', icon: '\u2501', tip: 'bloc', masa: 8, w: 120, h: 15, mu: 0.20, culoare: '#94a3b8' },
+    { cat: 'Blocuri', nume: 'Stalp', icon: '\u2503', tip: 'bloc', masa: 20, w: 20, h: 80, mu: 0.45, culoare: '#92400e' },
+    { cat: 'Blocuri', nume: 'Placa', icon: '\u25AD', tip: 'bloc', masa: 12, w: 150, h: 10, mu: 0.20, culoare: '#94a3b8' },
+    { cat: 'Blocuri', nume: 'Greutate', icon: '\u23F9', tip: 'bloc', masa: 80, w: 40, h: 40, mu: 0.50, culoare: '#64748b' },
+    { cat: 'Blocuri', nume: 'Gheata', icon: '\u2B1C', tip: 'bloc', masa: 8, w: 50, h: 50, mu: 0.03, culoare: '#a5f3fc' },
+    { cat: 'Blocuri', nume: 'Cauciuc', icon: '\u25A0', tip: 'bloc', masa: 12, w: 50, h: 40, mu: 0.90, culoare: '#1c1917' },
+
+    // Sfere
+    { cat: 'Sfere', nume: 'Bila mare', icon: '\u2B24', tip: 'sfera', masa: 20, raza: 40, mu: 0.25 },
+    { cat: 'Sfere', nume: 'Bila mica', icon: '\u2022', tip: 'sfera', masa: 2, raza: 12, mu: 0.25 },
+    { cat: 'Sfere', nume: 'Bolovan', icon: '\uD83E\uDEA8', tip: 'sfera', masa: 60, raza: 50, mu: 0.55, culoare: '#78716c' },
+    { cat: 'Sfere', nume: 'Balon', icon: '\uD83C\uDF88', tip: 'sfera', masa: 0.5, raza: 30, mu: 0.05, culoare: '#fb923c' },
+    { cat: 'Sfere', nume: 'Minge fotbal', icon: '\u26BD', tip: 'sfera', masa: 0.45, raza: 20, mu: 0.40, culoare: '#fafafa' },
+    { cat: 'Sfere', nume: 'Minge tenis', icon: '\uD83C\uDFBE', tip: 'sfera', masa: 0.06, raza: 10, mu: 0.55, culoare: '#d9f99d' },
+    { cat: 'Sfere', nume: 'Roata cauciuc', icon: '\u25CE', tip: 'sfera', masa: 10, raza: 30, mu: 0.85, culoare: '#1c1917' },
+    { cat: 'Sfere', nume: 'Bila otel', icon: '\u25C9', tip: 'sfera', masa: 30, raza: 18, mu: 0.15, culoare: '#a1a1aa' },
+    { cat: 'Sfere', nume: 'Bil\u0103 bowling', icon: '\u2B24', tip: 'sfera', masa: 6, raza: 22, mu: 0.25, culoare: '#1e293b' },
+
+    // Rampe & Triunghiuri
+    { cat: 'Rampe', nume: 'Rampa /', icon: '\u25E3', tip: 'triunghi', subtip: 'rampa-st', masa: 25, w: 120, h: 60, mu: 0.30, ancorat: true, culoare: '#65a30d' },
+    { cat: 'Rampe', nume: 'Rampa \\', icon: '\u25E2', tip: 'triunghi', subtip: 'rampa-dr', masa: 25, w: 120, h: 60, mu: 0.30, ancorat: true, culoare: '#65a30d' },
+    { cat: 'Rampe', nume: 'Piramida', icon: '\u25B3', tip: 'triunghi', masa: 15, w: 80, h: 70, mu: 0.35 },
+    { cat: 'Rampe', nume: 'Rampa joasa', icon: '\u25BF', tip: 'triunghi', subtip: 'rampa-st', masa: 30, w: 160, h: 30, mu: 0.25, ancorat: true, culoare: '#65a30d' },
+    { cat: 'Rampe', nume: 'Rampa gheata', icon: '\u25E3', tip: 'triunghi', subtip: 'rampa-st', masa: 25, w: 130, h: 65, mu: 0.03, ancorat: true, culoare: '#a5f3fc' },
+
+    // Structuri ancorate
+    { cat: 'Structuri', nume: 'Platforma', icon: '\u2550', tip: 'bloc', masa: 50, w: 200, h: 15, mu: 0.40, ancorat: true, culoare: '#737373' },
+    { cat: 'Structuri', nume: 'Zid', icon: '\u25AE', tip: 'bloc', masa: 100, w: 25, h: 120, mu: 0.50, ancorat: true, culoare: '#78716c' },
+    { cat: 'Structuri', nume: 'Pod', icon: '\u2594', tip: 'bloc', masa: 40, w: 250, h: 12, mu: 0.35, ancorat: true, culoare: '#92400e' },
+    { cat: 'Structuri', nume: 'Treapta', icon: '\u228F', tip: 'bloc', masa: 30, w: 80, h: 25, mu: 0.45, ancorat: true, culoare: '#737373' },
+    { cat: 'Structuri', nume: 'Copac', icon: '\uD83C\uDF33', tip: 'bloc', masa: 50, w: 30, h: 100, mu: 0.60, ancorat: true, culoare: '#2d5a27' },
+    { cat: 'Structuri', nume: 'Stanca', icon: '\uD83D\uDDFF', tip: 'sfera', masa: 100, raza: 55, mu: 0.55, ancorat: true, culoare: '#57534e' },
+];
+
+// --- Adauga obiect din preset ---
+function adaugaObiectPreset(idx) {
+    const p = PRESETURI[idx];
+    if (!p) return;
+    const w = W(), sol = nivelSol();
+    const col = p.culoare || CULORI_OBJ[culoareIdx % CULORI_OBJ.length];
+    culoareIdx++;
+
+    const cx = cam.x + w * 0.4 + Math.random() * w * 0.2;
+    const cy = cam.y + sol * 0.3;
+
+    const ob = {
+        tip: p.tip,
+        masa: p.masa,
+        mu: p.mu !== undefined ? p.mu : 0.30,
+        vx: 0, vy: 0, ax: 0, ay: 0,
+        vx0: 0, vy0: 0,
+        omega: 0, alpha: 0,
+        peSol: false,
+        ancorat: p.ancorat || false,
+        culoare: col,
+        rotatie: 0,
+        scala: 1,
+        snap: false
+    };
+
+    if (p.tip === 'sfera') {
+        ob.x = cx; ob.y = cy; ob.raza = p.raza;
+    } else {
+        ob.x = cx; ob.y = cy; ob.w = p.w; ob.h = p.h;
+    }
+
+    if (p.subtip) ob.subtip = p.subtip;
+
+    obiecte.push(ob);
+    sim.sel = obiecte.length - 1;
+    selConn = -1;
+    selecteazaObiect(sim.sel);
+    ist = []; sim.timp = 0; salveazaStare();
+}
+
+// Legacy wrapper
+function adaugaObiect(tip) {
+    const idx = PRESETURI.findIndex(p => p.tip === tip && !p.subtip && !p.ancorat);
+    if (idx >= 0) adaugaObiectPreset(idx);
+}
+
+// Build preset grid UI
+function construiesteGridPreseturi() {
+    const container = document.getElementById('presetGrid');
+    if (!container) return;
+    let html = '';
+    let lastCat = '';
+    PRESETURI.forEach((p, i) => {
+        if (p.cat !== lastCat) {
+            if (lastCat) html += '</div>';
+            html += '<div class="preset-cat">' + p.cat + '</div><div class="preset-grid">';
+            lastCat = p.cat;
+        }
+        html += '<button class="preset-btn" onclick="adaugaObiectPreset(' + i + ')" title="' + p.nume + '">' +
+            '<span class="pi">' + p.icon + '</span>' + p.nume + '</button>';
+    });
+    if (lastCat) html += '</div>';
+    container.innerHTML = html;
+}
+
+// --- Istoric stari ---
+let ist = [];
+const IST_MAX = 1500;
+
+function salveazaStare() {
+    const snap = obiecte.map(o => ({
+        x: o.x, y: o.y, vx: o.vx, vy: o.vy,
+        ax: o.ax, ay: o.ay, peSol: o.peSol,
+        omega: o.omega || 0,
+        rotatie: o.rotatie || 0, scala: o.scala || 1, snap: !!o.snap
+    }));
+    ist.push({ t: sim.timp, ob: snap });
+    if (ist.length > IST_MAX) ist.shift();
+}
+
+function restaureazaStare(idx) {
+    if (idx < 0 || idx >= ist.length) return;
+    const s = ist[idx];
+    sim.timp = s.t;
+    s.ob.forEach((st, i) => {
+        if (!obiecte[i]) return;
+        Object.assign(obiecte[i], st);
+    });
+}
+
+function W() { return canvas.width / devicePixelRatio; }
+function H() { return canvas.height / devicePixelRatio; }
+function nivelSol() { return H() - 80; }
+
+// --- Geometrie rotation-aware ---
+function rotatePoint(px, py, cx, cy, rad) {
+    const cos = Math.cos(rad), sin = Math.sin(rad);
+    const dx = px - cx, dy = py - cy;
+    return { x: cx + dx * cos - dy * sin, y: cy + dx * sin + dy * cos };
+}
+
+function momentInertie(ob) {
+    const m = ob.masa;
+    if (ob.tip === 'sfera') return 0.5 * m * ob.raza * ob.raza;
+    if (ob.tip === 'bloc') return (m / 12) * (ob.w * ob.w + ob.h * ob.h);
+    if (ob.tip === 'triunghi') return (m / 18) * (ob.w * ob.w + ob.h * ob.h);
+    return m * 100;
+}
+
+// Returneaza 4 colturi rotite ale unui bloc
+function vertexBloc(ob) {
+    const cx = ob.x + ob.w / 2, cy = ob.y + ob.h / 2;
+    const rad = (ob.rotatie || 0) * Math.PI / 180;
+    const corners = [
+        { x: ob.x, y: ob.y },
+        { x: ob.x + ob.w, y: ob.y },
+        { x: ob.x + ob.w, y: ob.y + ob.h },
+        { x: ob.x, y: ob.y + ob.h }
+    ];
+    if (Math.abs(rad) < 0.001) return corners;
+    return corners.map(p => rotatePoint(p.x, p.y, cx, cy, rad));
+}
+
+// Returneaza cele 3 varfuri ale unui triunghi (inclusiv rampe), rotite
+function vertexTriunghi(ob) {
+    const st = ob.subtip || 'normal';
+    let verts;
+    if (st === 'rampa-st') {
+        verts = [
+            { x: ob.x, y: ob.y + ob.h },
+            { x: ob.x + ob.w, y: ob.y + ob.h },
+            { x: ob.x + ob.w, y: ob.y }
+        ];
+    } else if (st === 'rampa-dr') {
+        verts = [
+            { x: ob.x, y: ob.y },
+            { x: ob.x, y: ob.y + ob.h },
+            { x: ob.x + ob.w, y: ob.y + ob.h }
+        ];
+    } else {
+        verts = [
+            { x: ob.x + ob.w / 2, y: ob.y },
+            { x: ob.x, y: ob.y + ob.h },
+            { x: ob.x + ob.w, y: ob.y + ob.h }
+        ];
+    }
+    const rad = (ob.rotatie || 0) * Math.PI / 180;
+    if (Math.abs(rad) < 0.001) return verts;
+    // Rotate around centroid
+    const cx = (verts[0].x + verts[1].x + verts[2].x) / 3;
+    const cy = (verts[0].y + verts[1].y + verts[2].y) / 3;
+    return verts.map(p => rotatePoint(p.x, p.y, cx, cy, rad));
+}
+
+// Returneaza vertexurile unui poligon (bloc=4, triunghi=3)
+function vertexOb(ob) {
+    if (ob.tip === 'bloc') return vertexBloc(ob);
+    if (ob.tip === 'triunghi') return vertexTriunghi(ob);
+    return null; // sfera nu are vertexuri
+}
+
+function centruOb(ob) {
+    if (ob.tip === 'bloc') return { cx: ob.x + ob.w / 2, cy: ob.y + ob.h / 2 };
+    if (ob.tip === 'triunghi') {
+        const v = vertexTriunghi(ob);
+        return { cx: (v[0].x + v[1].x + v[2].x) / 3, cy: (v[0].y + v[1].y + v[2].y) / 3 };
+    }
+    return { cx: ob.x, cy: ob.y };
+}
+
+function bazaOb(ob) {
+    if (ob.tip === 'sfera') return ob.y + ob.raza;
+    const v = vertexOb(ob);
+    if (v) return Math.max(...v.map(p => p.y));
+    return ob.y + ob.h;
+}
+
+function getAABB(ob) {
+    if (ob.tip === 'sfera') {
+        return { x1: ob.x - ob.raza, y1: ob.y - ob.raza, x2: ob.x + ob.raza, y2: ob.y + ob.raza };
+    }
+    const v = vertexOb(ob);
+    if (v) {
+        let x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+        for (const p of v) {
+            if (p.x < x1) x1 = p.x; if (p.x > x2) x2 = p.x;
+            if (p.y < y1) y1 = p.y; if (p.y > y2) y2 = p.y;
+        }
+        return { x1, y1, x2, y2 };
+    }
+    return { x1: ob.x, y1: ob.y, x2: ob.x + ob.w, y2: ob.y + ob.h };
+}
+
+// --- Calculeaza forta conector pe un obiect ---
+function fortaConector(conn, ob, idx) {
+    // Daca lungimea nu e fixata (simularea nu ruleaza), nu aplica forta
+    if (!conn.lungimeFixata) return { fx: 0, fy: 0 };
+
+    let altIdx = -1;
+    if (conn.idxA === idx) altIdx = conn.idxB;
+    else if (conn.idxB === idx) altIdx = conn.idxA;
+    else return { fx: 0, fy: 0 };
+
+    const alt = obiecte[altIdx];
+    if (!alt) return { fx: 0, fy: 0 };
+
+    const ca = centruOb(ob), cb = centruOb(alt);
+    const dx = cb.cx - ca.cx, dy = cb.cy - ca.cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 0.001) return { fx: 0, fy: 0 };
+
+    const nx = dx / dist, ny = dy / dist;
+    let F = 0;
+
+    if (conn.tip === 'sfoara') {
+        if (dist > conn.lungime) {
+            F = 2000 * (dist - conn.lungime);
+            // Damping pe sfoara intinsa
+            const vRel = (ob.vx - alt.vx) * nx + (ob.vy - alt.vy) * ny;
+            F -= 200 * vRel;
+        }
+    } else {
+        // Resort: Hooke + damping
+        F = conn.k * (dist - conn.lungime);
+        const vRel = (ob.vx - alt.vx) * nx + (ob.vy - alt.vy) * ny;
+        F -= 0.1 * conn.k * vRel;
+    }
+
+    return { fx: F * nx, fy: F * ny };
+}
+
+// ==============================
+//  MOTOR FIZIC — pasFizic()
+//  Toate fortele integrate corect
+// ==============================
+function pasFizic(dt) {
+    const sol = nivelSol();
+
+    obiecte.forEach((ob, idx) => {
+        // Obiect ancorat: nu se misca
+        if (ob.ancorat) {
+            ob.vx = 0; ob.vy = 0;
+            ob.ax = 0; ob.ay = 0;
+            ob.omega = 0;
+            // Verifica sol
+            const baza = bazaOb(ob);
+            if (baza >= sol) {
+                ob.y -= (baza - sol);
+                ob.peSol = true;
+            }
+            return; // skip integrare
+        }
+
+        let fx = 0, fy = 0;
+        const m = ob.masa;
+        const g = sim.g;
+
+        // 1. Greutatea (global g)
+        fy += m * g;
+
+        // 2. Rezistenta aerului (F_drag)
+        const vMag = Math.sqrt(ob.vx * ob.vx + ob.vy * ob.vy);
+        if (sim.Cd > 0 && vMag > 0.01) {
+            const A = arieOb(ob);
+            const rho = 1.225;
+            // Factor scala: convertim din pixeli in unitati fizice
+            const dragCoeff = 0.5 * sim.Cd * rho * A * vMag * 0.0001;
+            fx -= dragCoeff * ob.vx;
+            fy -= dragCoeff * ob.vy;
+        }
+
+        // 3. Normala + sol (cu rotatie)
+        const baza = bazaOb(ob);
+        if (baza >= sol) {
+            const penetrare = baza - sol;
+            ob.y -= penetrare;
+            ob.peSol = true;
+            fy -= m * g; // normala anuleaza greutatea
+            if (ob.vy > 0) ob.vy *= -0.2; // mic bounce
+            if (Math.abs(ob.vy) < 1.5) ob.vy = 0;
+
+            // 4. Frecarea pe sol (statica + kinetica)
+            const N = m * g;
+            const muK = ob.mu;
+            const muS = muK * 1.4; // frecare statica > kinetica
+            const FfK = muK * N;   // forta frecare kinetica
+            const FfS = muS * N;   // forta frecare statica
+
+            if (Math.abs(ob.vx) > 0.1) {
+                // Frecare kinetica
+                fx -= Math.sign(ob.vx) * FfK;
+            } else if (Math.abs(ob.vx) > 0.001) {
+                // Zona de tranzitie - amortizare puternica
+                fx -= ob.vx * FfS * 2;
+            } else {
+                // Frecare statica: tine obiectul in loc daca forta neta < μs*N
+                if (Math.abs(fx) < FfS) {
+                    ob.vx = 0;
+                    fx = 0; // forta neta anulata de frecare statica
+                } else {
+                    // Depasire frecare statica -> incepe miscare
+                    fx -= Math.sign(fx) * FfK;
+                }
+            }
+
+            // 5. Stabilizare rotatie pe sol — obiectele tind sa stea plat
+            if (ob.tip !== 'sfera') {
+                // Gasim unghiul "natural" cel mai apropiat (multiplu de 90° pt bloc, 0/120/240 pt triunghi)
+                const rot = ob.rotatie || 0;
+                let snapAngle;
+                if (ob.tip === 'bloc') {
+                    snapAngle = Math.round(rot / 90) * 90;
+                } else {
+                    // Triunghi: 0, 120, 240
+                    const options = [0, 120, 240, 360];
+                    snapAngle = options.reduce((best, a) =>
+                        Math.abs(rot - a) < Math.abs(rot - best) ? a : best, 0);
+                    if (snapAngle === 360) snapAngle = 0;
+                }
+                let diff = snapAngle - rot;
+                if (diff > 180) diff -= 360;
+                if (diff < -180) diff += 360;
+
+                // Cuplu restaurator proportional cu diferenta de unghi
+                const I = momentInertie(ob);
+                const restoreTorque = diff * (Math.PI / 180) * 8.0; // forta restauratoare
+                ob.omega = (ob.omega || 0) + restoreTorque * dt;
+
+                // Amortizare puternica cand pe sol
+                ob.omega *= 0.90;
+                if (Math.abs(ob.omega) < 0.02 && Math.abs(diff) < 0.5) {
+                    ob.omega = 0;
+                    ob.rotatie = snapAngle % 360;
+                }
+            } else {
+                // Sfera: frecare de rostogolire incetineste omega
+                ob.omega = (ob.omega || 0) * 0.98;
+                if (Math.abs(ob.omega) < 0.05) ob.omega = 0;
+            }
+        } else {
+            ob.peSol = false;
+        }
+
+        // 5. Forte din conectori (tensiune + elastica)
+        conexiuni.forEach(conn => {
+            const f = fortaConector(conn, ob, idx);
+            fx += f.fx;
+            fy += f.fy;
+        });
+
+        // Acceleratie (F = ma => a = F/m)
+        ob.ax = fx / m;
+        ob.ay = fy / m;
+
+        // Integrare semi-implicita Euler
+        ob.vx += ob.ax * dt;
+        ob.vy += ob.ay * dt;
+        ob.x += ob.vx * dt;
+        ob.y += ob.vy * dt;
+
+        // Integrare angulara
+        if (ob.omega === undefined) ob.omega = 0;
+        ob.omega *= 0.99; // amortizare angulara in aer
+        if (Math.abs(ob.omega) > 15) ob.omega = Math.sign(ob.omega) * 15; // clamp
+        ob.rotatie += ob.omega * (180 / Math.PI) * dt;
+        ob.rotatie = ((ob.rotatie % 360) + 360) % 360; // normalize 0-360
+    });
+
+    // Coliziuni obiect-obiect
+    rezolvaColiziuni();
+}
+
+// --- Coliziuni ---
+function mutaOb(ob, dx, dy) {
+    ob.x += dx;
+    ob.y += dy;
+}
+
+function closestPointOnSegment(px, py, ax, ay, bx, by) {
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    if (len2 < 0.0001) return { x: ax, y: ay };
+    let t = ((px - ax) * dx + (py - ay) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    return { x: ax + t * dx, y: ay + t * dy };
+}
+
+// Proiecteaza poligon pe o axa, returneaza [min, max]
+function proiectie(verts, axX, axY) {
+    let mn = Infinity, mx = -Infinity;
+    for (const p of verts) {
+        const d = p.x * axX + p.y * axY;
+        if (d < mn) mn = d;
+        if (d > mx) mx = d;
+    }
+    return [mn, mx];
+}
+
+// SAT: coliziune intre doua poligoane convexe
+function coliziuneSAT(vertsA, vertsB) {
+    let minOverlap = Infinity, bestNx = 0, bestNy = 0;
+    const allVerts = [vertsA, vertsB];
+
+    for (let p = 0; p < 2; p++) {
+        const poly = allVerts[p];
+        const n = poly.length;
+        for (let i = 0; i < n; i++) {
+            const j = (i + 1) % n;
+            // Normala muchiei (perpendiculara)
+            let axX = -(poly[j].y - poly[i].y);
+            let axY = poly[j].x - poly[i].x;
+            const len = Math.sqrt(axX * axX + axY * axY);
+            if (len < 0.0001) continue;
+            axX /= len; axY /= len;
+
+            const [minA, maxA] = proiectie(vertsA, axX, axY);
+            const [minB, maxB] = proiectie(vertsB, axX, axY);
+
+            const overlap = Math.min(maxA - minB, maxB - minA);
+            if (overlap <= 0) return { hit: false };
+
+            if (overlap < minOverlap) {
+                minOverlap = overlap;
+                bestNx = axX; bestNy = axY;
+            }
+        }
+    }
+
+    // Orientam normala de la A spre B
+    const cA = centroid(vertsA), cB = centroid(vertsB);
+    const dx = cB.x - cA.x, dy = cB.y - cA.y;
+    if (dx * bestNx + dy * bestNy < 0) { bestNx = -bestNx; bestNy = -bestNy; }
+
+    // Punct de contact: cel mai adanc vertex penetrant
+    const contact = gasestePunctContact(vertsA, vertsB, bestNx, bestNy);
+
+    return { hit: true, nx: bestNx, ny: bestNy, overlap: minOverlap, cx: contact.x, cy: contact.y };
+}
+
+function centroid(verts) {
+    let x = 0, y = 0;
+    for (const p of verts) { x += p.x; y += p.y; }
+    return { x: x / verts.length, y: y / verts.length };
+}
+
+function gasestePunctContact(vertsA, vertsB, nx, ny) {
+    // Gasim vertexul din B cel mai adanc in directia -n (penetrant in A)
+    let best = -Infinity, bx = 0, by = 0;
+    for (const p of vertsB) {
+        const d = -(p.x * nx + p.y * ny);
+        if (d > best) { best = d; bx = p.x; by = p.y; }
+    }
+    // Comparam cu vertexul din A cel mai adanc in directia +n
+    let bestA = -Infinity, ax = 0, ay = 0;
+    for (const p of vertsA) {
+        const d = p.x * nx + p.y * ny;
+        if (d > bestA) { bestA = d; ax = p.x; ay = p.y; }
+    }
+    // Punctul de contact e media
+    return { x: (ax + bx) / 2, y: (ay + by) / 2 };
+}
+
+// Test punct in poligon (ray casting — robust cu orice winding)
+function punctInConvex(px, py, verts) {
+    let crossings = 0;
+    const n = verts.length;
+    for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        const yi = verts[i].y, yj = verts[j].y;
+        if ((yi <= py && yj > py) || (yj <= py && yi > py)) {
+            const t = (py - yi) / (yj - yi);
+            if (px < verts[i].x + t * (verts[j].x - verts[i].x)) crossings++;
+        }
+    }
+    return (crossings % 2) === 1;
+}
+
+// Coliziune sfera vs poligon convex
+function coliziuneSferaPoligon(sfera, verts) {
+    const sx = sfera.x, sy = sfera.y, sr = sfera.raza;
+    const n = verts.length;
+
+    // Gasim cel mai apropiat punct pe marginea poligonului + muchia
+    let bestD = Infinity, bestPx = 0, bestPy = 0, bestEdge = 0;
+    for (let i = 0; i < n; i++) {
+        const j = (i + 1) % n;
+        const cp = closestPointOnSegment(sx, sy, verts[i].x, verts[i].y, verts[j].x, verts[j].y);
+        const d = (sx - cp.x) * (sx - cp.x) + (sy - cp.y) * (sy - cp.y);
+        if (d < bestD) { bestD = d; bestPx = cp.x; bestPy = cp.y; bestEdge = i; }
+    }
+
+    const dist = Math.sqrt(bestD);
+    const inside = punctInConvex(sx, sy, verts);
+
+    if (inside) {
+        // Sfera in interior: normala = perpendiculara pe muchia cea mai apropiata, spre exterior
+        const ei = bestEdge, ej = (bestEdge + 1) % n;
+        let enx = -(verts[ej].y - verts[ei].y);
+        let eny = verts[ej].x - verts[ei].x;
+        const elen = Math.sqrt(enx * enx + eny * eny);
+        if (elen > 0.001) { enx /= elen; eny /= elen; }
+        // Orientam spre exterior (departe de centroid)
+        const pcx = verts.reduce((s, p) => s + p.x, 0) / n;
+        const pcy = verts.reduce((s, p) => s + p.y, 0) / n;
+        const mid_x = (verts[ei].x + verts[ej].x) / 2;
+        const mid_y = (verts[ei].y + verts[ej].y) / 2;
+        if ((pcx - mid_x) * enx + (pcy - mid_y) * eny > 0) { enx = -enx; eny = -eny; }
+        return { hit: true, nx: enx, ny: eny, overlap: sr + dist, cx: bestPx, cy: bestPy };
+    }
+
+    if (dist < sr && dist > 0.001) {
+        const dx = sx - bestPx, dy = sy - bestPy;
+        return { hit: true, nx: dx / dist, ny: dy / dist, overlap: sr - dist, cx: bestPx, cy: bestPy };
+    }
+    return { hit: false };
+}
+
+function rezolvaColiziuni() {
+    const rest = 0.3;
+    const ITER = 6;
+    const MU_STATIC_FACTOR = 1.4; // μs ≈ 1.4 × μk (frecare statica > kinetica)
+
+    // Resetam informatiile de contact inainte de fiecare cadru
+    obiecte.forEach(ob => {
+        ob._contacte = []; // [{nx,ny,normalForce,frictionForce,ftx,fty,surfObj}]
+        ob._peSuprafata = false;
+    });
+
+    for (let iter = 0; iter < ITER; iter++) {
+        for (let i = 0; i < obiecte.length; i++) {
+            for (let j = i + 1; j < obiecte.length; j++) {
+                const a = obiecte[i], b = obiecte[j];
+
+                const invMA = a.ancorat ? 0 : 1 / a.masa;
+                const invMB = b.ancorat ? 0 : 1 / b.masa;
+                const invTotal = invMA + invMB;
+                if (invTotal === 0) continue;
+
+                // Broad phase: AABB overlap
+                const aabbA = getAABB(a), aabbB = getAABB(b);
+                if (aabbA.x2 <= aabbB.x1 || aabbA.x1 >= aabbB.x2 ||
+                    aabbA.y2 <= aabbB.y1 || aabbA.y1 >= aabbB.y2) continue;
+
+                let nx = 0, ny = 0, overlap = 0, contactX = 0, contactY = 0;
+                let coliziune = false;
+
+                const ca = centruOb(a), cb = centruOb(b);
+
+                if (a.tip === 'sfera' && b.tip === 'sfera') {
+                    const dx = cb.cx - ca.cx, dy = cb.cy - ca.cy;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const minDist = a.raza + b.raza;
+                    if (dist < minDist && dist > 0.001) {
+                        nx = dx / dist; ny = dy / dist;
+                        overlap = minDist - dist;
+                        contactX = a.x + nx * a.raza;
+                        contactY = a.y + ny * a.raza;
+                        coliziune = true;
+                    }
+                } else if (a.tip === 'sfera' && b.tip !== 'sfera') {
+                    const vB = vertexOb(b);
+                    const r = coliziuneSferaPoligon(a, vB);
+                    if (r.hit) {
+                        nx = -r.nx; ny = -r.ny;
+                        overlap = r.overlap;
+                        contactX = r.cx; contactY = r.cy;
+                        coliziune = true;
+                    }
+                } else if (a.tip !== 'sfera' && b.tip === 'sfera') {
+                    const vA = vertexOb(a);
+                    const r = coliziuneSferaPoligon(b, vA);
+                    if (r.hit) {
+                        nx = r.nx; ny = r.ny;
+                        overlap = r.overlap;
+                        contactX = r.cx; contactY = r.cy;
+                        coliziune = true;
+                    }
+                } else {
+                    const vA = vertexOb(a), vB = vertexOb(b);
+                    const r = coliziuneSAT(vA, vB);
+                    if (r.hit) {
+                        nx = r.nx; ny = r.ny;
+                        overlap = r.overlap;
+                        contactX = r.cx; contactY = r.cy;
+                        coliziune = true;
+                    }
+                }
+
+                if (!coliziune || overlap <= 0) continue;
+
+                // Separare pozitionala
+                const sepA = overlap * invMA / invTotal;
+                const sepB = overlap * invMB / invTotal;
+                if (!a.ancorat) mutaOb(a, -nx * sepA, -ny * sepA);
+                if (!b.ancorat) mutaOb(b,  nx * sepB,  ny * sepB);
+
+                // Raspuns impuls cu rotatie si frecare (pe fiecare iteratie)
+                const IA = a.ancorat ? Infinity : momentInertie(a);
+                const IB = b.ancorat ? Infinity : momentInertie(b);
+                const invIA = a.ancorat ? 0 : 1 / IA;
+                const invIB = b.ancorat ? 0 : 1 / IB;
+
+                const rAx = contactX - ca.cx, rAy = contactY - ca.cy;
+                const rBx = contactX - cb.cx, rBy = contactY - cb.cy;
+
+                const omegaA = a.omega || 0, omegaB = b.omega || 0;
+                const vAx = a.vx - omegaA * rAy, vAy = a.vy + omegaA * rAx;
+                const vBx = b.vx - omegaB * rBy, vBy = b.vy + omegaB * rBx;
+                const dvx = vAx - vBx, dvy = vAy - vBy;
+                const dvDotN = dvx * nx + dvy * ny;
+
+                let jn = 0;
+                if (dvDotN > 0) {
+                    const rAxN = rAx * ny - rAy * nx;
+                    const rBxN = rBx * ny - rBy * nx;
+                    const denom = invMA + invMB + rAxN * rAxN * invIA + rBxN * rBxN * invIB;
+
+                    // Doar restitutie pe prima iteratie, restul e pur corectiv
+                    const e = iter === 0 ? rest : 0;
+                    jn = (1 + e) * dvDotN / denom;
+
+                    const angularScale = 0.4;
+                    if (!a.ancorat) {
+                        a.vx -= jn * invMA * nx;
+                        a.vy -= jn * invMA * ny;
+                        a.omega -= jn * rAxN * invIA * angularScale;
+                    }
+                    if (!b.ancorat) {
+                        b.vx += jn * invMB * nx;
+                        b.vy += jn * invMB * ny;
+                        b.omega += jn * rBxN * invIB * angularScale;
+                    }
+                }
+
+                // Forta normala de contact (pentru frecare si vectori)
+                // N = overlap * stiffness + impulse component
+                const contactStiffness = 5.0;
+                const normalForceMag = overlap * contactStiffness * (a.masa * b.masa) / (a.masa + b.masa) + Math.abs(jn) * 60;
+
+                // Frecare tangentiala - Coulomb cu static/kinetic
+                const muK = (a.mu + b.mu) / 2;           // coeficient frecare kinetica
+                const muS = muK * MU_STATIC_FACTOR;       // coeficient frecare statica
+
+                if (muK > 0) {
+                    // Recalculam viteza relativa dupa impulsul normal
+                    const omA2 = a.omega || 0, omB2 = b.omega || 0;
+                    const vA2x = a.vx - omA2 * rAy, vA2y = a.vy + omA2 * rAx;
+                    const vB2x = b.vx - omB2 * rBy, vB2y = b.vy + omB2 * rBx;
+                    const dv2x = vA2x - vB2x, dv2y = vA2y - vB2y;
+                    const dv2n = dv2x * nx + dv2y * ny;
+
+                    // Componenta tangentiala
+                    const tx = dv2x - dv2n * nx;
+                    const ty = dv2y - dv2n * ny;
+                    const tLen = Math.sqrt(tx * tx + ty * ty);
+
+                    if (tLen > 0.001) {
+                        const tnx = tx / tLen, tny = ty / tLen;
+                        const rAxT = rAx * tny - rAy * tnx;
+                        const rBxT = rBx * tny - rBy * tnx;
+                        const denomT = invMA + invMB + rAxT * rAxT * invIA + rBxT * rBxT * invIB;
+
+                        // Impuls necesar sa opreasca miscarea tangentiala
+                        let jt = tLen / denomT;
+
+                        // Coulomb: static vs kinetic
+                        const maxStaticF = muS * normalForceMag / 60;
+                        const maxKineticF = muK * normalForceMag / 60;
+
+                        let frictionType = 'kinetic';
+                        if (jt <= maxStaticF) {
+                            // Frecare statica: opreste complet miscarea tangentiala
+                            frictionType = 'static';
+                        } else {
+                            // Frecare kinetica: limiteaza la μk * N
+                            jt = maxKineticF;
+                        }
+
+                        const angFric = 0.4;
+                        if (!a.ancorat) {
+                            a.vx -= jt * invMA * tnx;
+                            a.vy -= jt * invMA * tny;
+                            a.omega -= jt * rAxT * invIA * angFric;
+                        }
+                        if (!b.ancorat) {
+                            b.vx += jt * invMB * tnx;
+                            b.vy += jt * invMB * tny;
+                            b.omega += jt * rBxT * invIB * angFric;
+                        }
+
+                        // Salvam informatii de contact (doar iter 0 pt afisare)
+                        if (iter === 0) {
+                            const ffMag = jt * 60; // aprox forta frecare
+                            if (!a.ancorat) {
+                                a._contacte.push({ nx: -nx, ny: -ny, normalForce: normalForceMag, frictionForce: ffMag, ftx: -tnx, fty: -tny, surfObj: j, cpx: contactX, cpy: contactY });
+                                a._peSuprafata = true;
+                            }
+                            if (!b.ancorat) {
+                                b._contacte.push({ nx: nx, ny: ny, normalForce: normalForceMag, frictionForce: ffMag, ftx: tnx, fty: tny, surfObj: i, cpx: contactX, cpy: contactY });
+                                b._peSuprafata = true;
+                            }
+                        }
+                    } else if (iter === 0) {
+                        // In contact dar fara alunecare (frecare statica tine obiectul)
+                        if (!a.ancorat) {
+                            a._contacte.push({ nx: -nx, ny: -ny, normalForce: normalForceMag, frictionForce: 0, ftx: 0, fty: 0, surfObj: j, cpx: contactX, cpy: contactY, static: true });
+                            a._peSuprafata = true;
+                        }
+                        if (!b.ancorat) {
+                            b._contacte.push({ nx: nx, ny: ny, normalForce: normalForceMag, frictionForce: 0, ftx: 0, fty: 0, surfObj: i, cpx: contactX, cpy: contactY, static: true });
+                            b._peSuprafata = true;
+                        }
+                    }
+                } else if (iter === 0) {
+                    // Fara frecare, dar inca avem contact normal
+                    if (!a.ancorat) {
+                        a._contacte.push({ nx: -nx, ny: -ny, normalForce: normalForceMag, frictionForce: 0, ftx: 0, fty: 0, surfObj: j, cpx: contactX, cpy: contactY });
+                        a._peSuprafata = true;
+                    }
+                    if (!b.ancorat) {
+                        b._contacte.push({ nx: nx, ny: ny, normalForce: normalForceMag, frictionForce: 0, ftx: 0, fty: 0, surfObj: i, cpx: contactX, cpy: contactY });
+                        b._peSuprafata = true;
+                    }
+                }
+
+                // Amortizare angulara la contact
+                if (!a.ancorat && a.tip !== 'sfera') {
+                    a.omega = (a.omega || 0) * 0.92;
+                    if (Math.abs(a.omega) < 0.03) a.omega = 0;
+                }
+                if (!b.ancorat && b.tip !== 'sfera') {
+                    b.omega = (b.omega || 0) * 0.92;
+                    if (Math.abs(b.omega) < 0.03) b.omega = 0;
+                }
+                if (!a.ancorat && a.tip === 'sfera') a.omega = (a.omega || 0) * 0.995;
+                if (!b.ancorat && b.tip === 'sfera') b.omega = (b.omega || 0) * 0.995;
+            }
+        }
+    }
+}
+
+// --- Sageata ---
+function sageata(x1, y1, x2, y2, col, eticheta, val, punctat) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const lung = Math.sqrt(dx * dx + dy * dy);
+    if (lung < 2) return;
+    ctx.save();
+
+    // Linie cu grosime proportionala
+    const lw = Math.min(2 + lung / 50, 4);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = lw;
+    ctx.globalAlpha = Math.min(0.6 + lung / 80, 1);
+    if (punctat) ctx.setLineDash([5, 3]);
+
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Varf sageata (triunghi plin)
+    const u = Math.atan2(dy, dx);
+    const d = Math.min(10, Math.max(5, lung * 0.25));
+    const halfAngle = 0.35;
+    ctx.fillStyle = col;
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - d * Math.cos(u - halfAngle), y2 - d * Math.sin(u - halfAngle));
+    ctx.lineTo(x2 - d * Math.cos(u + halfAngle), y2 - d * Math.sin(u + halfAngle));
+    ctx.closePath();
+    ctx.fill();
+
+    // Eticheta cu valoare — fond semi-transparent pentru lizibilitate
+    const valStr = typeof val === 'number' && val > 0 ? eticheta + '=' + val.toFixed(1) : eticheta;
+    ctx.font = 'bold 9px JetBrains Mono';
+    const textW = ctx.measureText(valStr).width;
+
+    // Pozitia etichetei: perpendicular pe sageata, la mijloc
+    const mx = x1 + dx * 0.5, my = y1 + dy * 0.5;
+    const perpX = -dy / lung, perpY = dx / lung;
+    const labelOff = 10;
+    const lx = mx + perpX * labelOff - textW / 2;
+    const ly = my + perpY * labelOff;
+
+    // Background pill
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    ctx.beginPath();
+    ctx.roundRect(lx - 3, ly - 9, textW + 6, 12, 3);
+    ctx.fill();
+
+    // Text
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = col;
+    ctx.fillText(valStr, lx, ly);
+
+    ctx.restore();
+}
+
+function deseneazaResort(x1, y1, x2, y2, seg, ampl, lungRepaus) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const lung = Math.sqrt(dx * dx + dy * dy);
+    if (lung < 1) return;
+    const ux = dx / lung, uy = dy / lung;
+    const px = -uy, py = ux;
+    const intens = Math.min(Math.abs(lung - lungRepaus) / 80, 1);
+    ctx.strokeStyle = `rgb(${Math.round(248*(0.5+0.5*intens))},${Math.round(113*(1-intens*0.5))},113)`;
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x1, y1);
+    const s = 0.1, e = 0.9;
+    ctx.lineTo(x1 + ux * lung * s, y1 + uy * lung * s);
+    for (let i = 0; i < seg; i++) {
+        const t = s + (e - s) * (i + 0.5) / seg;
+        const side = (i % 2 === 0) ? 1 : -1;
+        ctx.lineTo(x1 + ux * lung * t + px * ampl * side, y1 + uy * lung * t + py * ampl * side);
+    }
+    ctx.lineTo(x1 + ux * lung * e, y1 + uy * lung * e);
+    ctx.lineTo(x2, y2); ctx.stroke();
+}
+
+// --- Vectori forta ---
+function deseneazaVectori(ob, idx) {
+    const m = ob.masa, g = sim.g;
+    const { cx, cy } = centruOb(ob);
+    const bz = bazaOb(ob);
+
+    // Scala unica: 1N = sc pixeli lungime sageata
+    const sc = 0.5;
+    // Lungime minima sageata pentru vizibilitate
+    const minLen = 8;
+
+    function scaleForce(fx, fy) {
+        const mag = Math.sqrt(fx * fx + fy * fy);
+        if (mag < 0.1) return null;
+        const len = Math.max(minLen, mag * sc);
+        const nx = fx / mag, ny = fy / mag;
+        return { dx: nx * len, dy: ny * len, mag };
+    }
+
+    // ═══ 1. GREUTATE (G) — centru masa, in jos ═══
+    const G = m * g;
+    if (G > 0.1) {
+        const gLen = Math.max(minLen, G * sc);
+        sageata(cx, cy, cx, cy + gLen, COL.greutate, 'G', G);
+    }
+
+    // ═══ 2. NORMALA SOL (N) — de la baza obiectului, in sus ═══
+    if (ob.peSol && G > 0.1) {
+        const nLen = Math.max(minLen, G * sc);
+        sageata(cx, bz, cx, bz - nLen, COL.normala, 'N', G);
+    }
+
+    // ═══ 3. FRECARE SOL (Ff) — de la baza, opusa miscarii ═══
+    if (ob.peSol) {
+        const Ff = ob.mu * G;
+        if (Ff > 0.1) {
+            if (Math.abs(ob.vx) > 0.05) {
+                // Frecare kinetica — opusa vitezei
+                const fLen = Math.max(minLen, Ff * sc);
+                const dir = -Math.sign(ob.vx);
+                sageata(cx, bz, cx + dir * fLen, bz, COL.frecare, 'Ff', Ff);
+            } else if (Math.abs(ob.ax) > 0.01) {
+                // Frecare statica — opusa acceleratiei (tine obiectul pe loc)
+                const Fs = Math.min(Ff, Math.abs(m * ob.ax));
+                if (Fs > 0.1) {
+                    const fsLen = Math.max(minLen, Fs * sc);
+                    const dir = -Math.sign(ob.ax);
+                    sageata(cx, bz, cx + dir * fsLen, bz, COL.frecare, 'Fs', Fs);
+                }
+            }
+        }
+    }
+
+    // ═══ 4. NORMALE + FRECARE DE CONTACT (alte obiecte) ═══
+    if (ob._contacte && ob._contacte.length > 0) {
+        ob._contacte.forEach((c, ci) => {
+            // Punctul de contact real (sau centru daca nu e disponibil)
+            const px = c.cpx !== undefined ? c.cpx : cx;
+            const py = c.cpy !== undefined ? c.cpy : cy;
+
+            // Normala de contact — porneste din punctul de contact, in directia normalei
+            if (c.normalForce > 0.5) {
+                const nLen = Math.max(minLen, c.normalForce * sc * 0.4);
+                sageata(px, py, px + c.nx * nLen, py + c.ny * nLen, COL.normala, 'N', c.normalForce);
+            }
+
+            // Frecare de contact — tangenta pe suprafata
+            if (c.frictionForce > 0.1) {
+                const fLen = Math.max(minLen, c.frictionForce * sc * 0.4);
+                sageata(px, py, px + c.ftx * fLen, py + c.fty * fLen, COL.frecare, 'Ff', c.frictionForce);
+            } else if (c.static && c.normalForce > 0.5) {
+                // Frecare statica — arata o sageata mica cu Fs
+                const muS = ob.mu || 0.3;
+                const maxFs = muS * c.normalForce;
+                if (maxFs > 0.5) {
+                    // Directia tangenta perpendiculara pe normala
+                    const tx = -c.ny, ty = c.nx;
+                    const fsLen = Math.max(6, maxFs * sc * 0.15);
+                    sageata(px, py, px + tx * fsLen, py + ty * fsLen, COL.frecare, 'Fs', maxFs);
+                }
+            }
+        });
+    }
+
+    // ═══ 5. REZISTENTA AER (Fd) — centru masa, opusa vitezei ═══
+    const vMag = Math.sqrt(ob.vx * ob.vx + ob.vy * ob.vy);
+    if (sim.Cd > 0 && vMag > 1) {
+        const A = arieOb(ob);
+        const dragCoeff = 0.5 * sim.Cd * 1.225 * A * vMag * 0.0001;
+        const fdx = -dragCoeff * ob.vx;
+        const fdy = -dragCoeff * ob.vy;
+        const fdMag = Math.sqrt(fdx * fdx + fdy * fdy);
+        if (fdMag > 0.5) {
+            const f = scaleForce(fdx, fdy);
+            if (f) sageata(cx, cy, cx + f.dx, cy + f.dy, COL.drag, 'Fd', f.mag);
+        }
+    }
+
+    // ═══ 6. TENSIUNE / ELASTICA din conectori ═══
+    conexiuni.forEach(conn => {
+        const f = fortaConector(conn, ob, idx);
+        const fMag = Math.sqrt(f.fx * f.fx + f.fy * f.fy);
+        if (fMag > 0.3) {
+            const col = conn.tip === 'sfoara' ? COL.tensiune : COL.elastica;
+            const label = conn.tip === 'sfoara' ? 'T' : 'Fe';
+            const fsc = Math.min(sc * 0.15, 40 / fMag);
+            sageata(cx, cy, cx + f.fx * fsc, cy + f.fy * fsc, col, label, fMag);
+        }
+    });
+
+    // ═══ 7. FORTA NETA / INERTIE (ma) — punctata ═══
+    const Fnetx = m * ob.ax, Fnety = m * ob.ay;
+    const FnetMag = Math.sqrt(Fnetx * Fnetx + Fnety * Fnety);
+    if (FnetMag > 0.5) {
+        const f = scaleForce(Fnetx, Fnety);
+        if (f) sageata(cx, cy, cx + f.dx, cy + f.dy, COL.inertie, 'ma', FnetMag, true);
+    }
+}
+
+// --- Desenare conectori ---
+function deseneazaConectori() {
+    conexiuni.forEach((conn, ci) => {
+        const a = obiecte[conn.idxA], b = obiecte[conn.idxB];
+        if (!a || !b) return;
+        const ca = centruOb(a), cb = centruOb(b);
+        const dx = cb.cx - ca.cx, dy = cb.cy - ca.cy;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const sel = ci === selConn;
+
+        if (conn.tip === 'sfoara') {
+            ctx.save();
+            const intins = conn.lungimeFixata && dist > conn.lungime;
+            ctx.strokeStyle = sel ? '#dbc4ff' : (intins ? '#c4b5fd' : '#a78bfa');
+            ctx.lineWidth = sel ? 3 : (intins ? 2.5 : 2);
+            if (!intins) {
+                ctx.setLineDash([6, 4]);
+                ctx.globalAlpha = 0.5;
+            } else {
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 0.9;
+            }
+            ctx.beginPath();
+            ctx.moveTo(ca.cx, ca.cy);
+            ctx.lineTo(cb.cx, cb.cy);
+            ctx.stroke();
+            // Label "T" pe mijlocul sforii cand e intinsa
+            if (intins) {
+                const mx = (ca.cx + cb.cx) / 2, my = (ca.cy + cb.cy) / 2;
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 0.85;
+                ctx.font = 'bold 10px JetBrains Mono';
+                ctx.fillStyle = '#a78bfa';
+                ctx.textAlign = 'center';
+                ctx.fillText('T', mx, my - 8);
+                ctx.textAlign = 'start';
+            }
+            ctx.restore();
+        } else {
+            if (sel) {
+                ctx.save();
+                ctx.strokeStyle = 'rgba(248,113,113,0.3)';
+                ctx.lineWidth = 8;
+                ctx.beginPath(); ctx.moveTo(ca.cx, ca.cy); ctx.lineTo(cb.cx, cb.cy); ctx.stroke();
+                ctx.restore();
+            }
+            deseneazaResort(ca.cx, ca.cy, cb.cx, cb.cy, 12, 8, conn.lungime);
+            // Label "Fe" pe resort cand e activ
+            if (conn.lungimeFixata && Math.abs(dist - conn.lungime) > 1) {
+                ctx.save();
+                const mx = (ca.cx + cb.cx) / 2, my = (ca.cy + cb.cy) / 2;
+                ctx.globalAlpha = 0.85;
+                ctx.font = 'bold 10px JetBrains Mono';
+                ctx.fillStyle = '#f87171';
+                ctx.textAlign = 'center';
+                ctx.fillText('Fe', mx, my - 8);
+                ctx.textAlign = 'start';
+                ctx.restore();
+            }
+        }
+    });
+}
+
+// --- Hit test ---
+function hitTest(ob, mx, my) {
+    if (ob.tip === 'sfera') {
+        const dx = mx - ob.x, dy = my - ob.y;
+        return dx * dx + dy * dy <= ob.raza * ob.raza;
+    }
+    const v = vertexOb(ob);
+    if (v) return punctInConvex(mx, my, v);
+    return false;
+}
+
+function hitTestConector(conn, wx, wy) {
+    const a = obiecte[conn.idxA], b = obiecte[conn.idxB];
+    if (!a || !b) return false;
+    const ca = centruOb(a), cb = centruOb(b);
+    const dx = cb.cx - ca.cx, dy = cb.cy - ca.cy;
+    const len2 = dx * dx + dy * dy;
+    if (len2 < 1) return false;
+    let t = ((wx - ca.cx) * dx + (wy - ca.cy) * dy) / len2;
+    t = Math.max(0, Math.min(1, t));
+    const px = ca.cx + t * dx, py = ca.cy + t * dy;
+    const d2 = (wx - px) * (wx - px) + (wy - py) * (wy - py);
+    return d2 < 100;
+}
+
+function deseneazaVitezaInitiala(ob) {
+    if (!sim.activa && (Math.abs(ob.vx0) > 0.5 || Math.abs(ob.vy0) > 0.5)) {
+        const { cx, cy } = centruOb(ob);
+        const sc = 0.4;
+        sageata(cx, cy, cx + ob.vx0 * sc, cy + ob.vy0 * sc, COL.v0, 'v\u2080', Math.sqrt(ob.vx0*ob.vx0+ob.vy0*ob.vy0), true);
+    }
+}
+
+// --- Desenare indicator ancora ---
+function deseneazaAncora(ob) {
+    if (!ob.ancorat) return;
+    const { cx, cy } = centruOb(ob);
+    const aabb = getAABB(ob);
+    // Desenam un simbol de ancora deasupra
+    const topY = aabb.y1 - 14;
+
+    ctx.save();
+    ctx.font = 'bold 11px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(52,211,153,0.9)';
+    ctx.fillText('\u2693', cx, topY + 10);
+
+    // Chenar punctat subtil in jurul obiectului
+    ctx.strokeStyle = 'rgba(52,211,153,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 3]);
+    if (ob.tip === 'sfera') {
+        ctx.beginPath();
+        ctx.arc(ob.x, ob.y, ob.raza + 4, 0, Math.PI * 2);
+        ctx.stroke();
+    } else {
+        ctx.strokeRect(aabb.x1 - 3, aabb.y1 - 3, (aabb.x2 - aabb.x1) + 6, (aabb.y2 - aabb.y1) + 6);
+    }
+    ctx.restore();
+}
+
+// --- Cadru principal ---
+function desenCadru() {
+    const w = W(), h = H(), sol = nivelSol();
+    const z = cam.zoom;
+
+    // Cer cu gradient din tema
+    const t = TEME[temaActuala];
+    if (t.skyColors.length <= 1) {
+        ctx.fillStyle = t.skyColors[0] || '#0f1117';
+        ctx.fillRect(0, 0, w, h);
+    } else {
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, h);
+        t.skyColors.forEach((c, i) => skyGrad.addColorStop(i / (t.skyColors.length - 1), c));
+        ctx.fillStyle = skyGrad;
+        ctx.fillRect(0, 0, w, h);
+    }
+
+    // Aplicam zoom centrat + camera pan
+    ctx.save();
+    ctx.translate(w / 2, h / 2);
+    ctx.scale(z, z);
+    ctx.translate(-w / 2 - cam.x, -h / 2 - cam.y);
+
+    // Campul vizibil in coordonate world
+    const vLeft = cam.x + (0 - w / 2) * (1 / z - 1);
+    const vRight = cam.x + w + (w / 2) * (1 / z - 1);
+    const vTop = cam.y + (0 - h / 2) * (1 / z - 1);
+    const vBot = cam.y + h + (h / 2) * (1 / z - 1);
+
+    // Decoratiuni tema (soare, luna, stele, nori) - inainte de grila
+    deseneazaDecorTema(w, h, sol, vLeft, vRight, vTop, vBot, z);
+
+    // Grila
+    ctx.strokeStyle = t.gridColor; ctx.lineWidth = 0.5 / z;
+    const gridStep = 40;
+    const gx0 = Math.floor(vLeft / gridStep) * gridStep;
+    const gy0 = Math.floor(vTop / gridStep) * gridStep;
+    for (let x = gx0; x <= vRight; x += gridStep) { ctx.beginPath(); ctx.moveTo(x, vTop); ctx.lineTo(x, vBot); ctx.stroke(); }
+    for (let y = gy0; y <= vBot; y += gridStep) { ctx.beginPath(); ctx.moveTo(vLeft, y); ctx.lineTo(vRight, y); ctx.stroke(); }
+
+    // Origine
+    if (0 >= vLeft && 0 <= vRight) {
+        ctx.strokeStyle = t.originColor; ctx.lineWidth = 1 / z;
+        ctx.setLineDash([6 / z, 4 / z]);
+        ctx.beginPath(); ctx.moveTo(0, vTop); ctx.lineTo(0, sol); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = t.originColor; ctx.font = (9 / z) + 'px JetBrains Mono';
+        ctx.fillText('ORIGIN', 4, vTop + 14 / z);
+    }
+
+    // Sol
+    ctx.fillStyle = t.groundFill; ctx.fillRect(vLeft, sol, vRight - vLeft, vBot - sol + 100);
+    ctx.strokeStyle = t.groundStroke; ctx.lineWidth = 2 / z;
+    ctx.beginPath(); ctx.moveTo(vLeft, sol); ctx.lineTo(vRight, sol); ctx.stroke();
+    ctx.strokeStyle = t.groundGrass; ctx.lineWidth = 1 / z;
+    const hx0 = Math.floor(vLeft / 12) * 12;
+    for (let hx = hx0; hx <= vRight; hx += 12) {
+        ctx.beginPath(); ctx.moveTo(hx, sol + 2); ctx.lineTo(hx + 8, sol + 14); ctx.stroke();
+    }
+
+    // Scala
+    ctx.fillStyle = t.scaleColor; ctx.font = (10 / z) + 'px JetBrains Mono';
+    const sx0 = Math.floor(vLeft / 80) * 80;
+    for (let mx = sx0; mx <= vRight; mx += 80) {
+        const worldX = mx / 80;
+        ctx.fillText(worldX.toFixed(0) + 'm', mx + 2, sol + 26 / z);
+    }
+
+    // Conectori
+    deseneazaConectori();
+
+    obiecte.forEach((ob, idx) => {
+        const sel = idx === sim.sel;
+
+        if (ob.tip === 'bloc') {
+            const v = vertexBloc(ob);
+            const c = centruOb(ob);
+            // Umbra
+            ctx.beginPath();
+            ctx.moveTo(v[0].x + 3, v[0].y + 3);
+            for (let k = 1; k < 4; k++) ctx.lineTo(v[k].x + 3, v[k].y + 3);
+            ctx.closePath(); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+            // Forma
+            ctx.beginPath();
+            ctx.moveTo(v[0].x, v[0].y);
+            for (let k = 1; k < 4; k++) ctx.lineTo(v[k].x, v[k].y);
+            ctx.closePath();
+            ctx.fillStyle = sel ? '#ffb347' : ob.culoare; ctx.fill();
+            ctx.strokeStyle = sel ? '#ffd700' : 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = sel ? 2 : 1; ctx.stroke();
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'center';
+            ctx.fillText(ob.masa + 'kg', c.cx, c.cy + 4);
+        } else if (ob.tip === 'triunghi') {
+            const v = vertexTriunghi(ob);
+            const c = centruOb(ob);
+            // Umbra
+            ctx.beginPath();
+            ctx.moveTo(v[0].x + 3, v[0].y + 3); ctx.lineTo(v[1].x + 3, v[1].y + 3); ctx.lineTo(v[2].x + 3, v[2].y + 3);
+            ctx.closePath(); ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+            // Forma
+            ctx.beginPath();
+            ctx.moveTo(v[0].x, v[0].y); ctx.lineTo(v[1].x, v[1].y); ctx.lineTo(v[2].x, v[2].y);
+            ctx.closePath();
+            ctx.fillStyle = sel ? '#ffb347' : ob.culoare; ctx.fill();
+            ctx.strokeStyle = sel ? '#ffd700' : 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = sel ? 2 : 1; ctx.stroke();
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+            ctx.fillText(ob.masa + 'kg', c.cx, c.cy + 4);
+        } else {
+            ctx.beginPath(); ctx.arc(ob.x, ob.y, ob.raza, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.3)'; ctx.fill();
+            ctx.beginPath(); ctx.arc(ob.x - 2, ob.y - 2, ob.raza, 0, Math.PI * 2);
+            ctx.fillStyle = sel ? '#c4a3ff' : ob.culoare; ctx.fill();
+            ctx.strokeStyle = sel ? '#dbc4ff' : 'rgba(0,0,0,0.3)';
+            ctx.lineWidth = sel ? 2 : 1; ctx.stroke();
+            ctx.fillStyle = 'rgba(0,0,0,0.6)';
+            ctx.font = '10px JetBrains Mono'; ctx.textAlign = 'center';
+            ctx.fillText(ob.masa + 'kg', ob.x - 2, ob.y + 3);
+        }
+        ctx.textAlign = 'start';
+        deseneazaAncora(ob);
+        deseneazaVectori(ob, idx);
+        deseneazaVitezaInitiala(ob);
+    });
+
+    ctx.restore();
+
+    // Gizmo pe obiectul selectat (screen space)
+    deseneazaGizmo();
+
+    // Info selectat
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        const ob = obiecte[sim.sel];
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '11px JetBrains Mono'; ctx.textAlign = 'right';
+        ctx.fillText('v = ' + ob.vx.toFixed(2) + ' m/s', w - 14, 24);
+        ctx.fillText('a = ' + ob.ax.toFixed(2) + ' m/s\u00B2', w - 14, 40);
+        ctx.fillText('x = ' + (ob.x / 80).toFixed(2) + ' m', w - 14, 56);
+        if (ob.ancorat) {
+            ctx.fillStyle = 'rgba(52,211,153,0.7)';
+            ctx.fillText('\u2693 ANCORAT', w - 14, 72);
+        }
+        ctx.textAlign = 'start';
+    }
+
+    // Mesaj gol
+    if (obiecte.length === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.font = '16px DM Sans'; ctx.textAlign = 'center';
+        ctx.fillText('Adauga obiecte din panoul din dreapta', w / 2, sol / 2);
+        ctx.font = '12px DM Sans'; ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        ctx.fillText('Motorul fizic este activ cu toate cele 6 forte', w / 2, sol / 2 + 28);
+        ctx.textAlign = 'start';
+    }
+
+    document.getElementById('camPos').textContent = 'x:' + (cam.x / 80).toFixed(1) + ' y:' + (cam.y / 80).toFixed(1) + ' ' + cam.zoom.toFixed(1) + 'x';
+    const recBtn = document.getElementById('camRecenter');
+    recBtn.classList.toggle('visible', Math.abs(cam.x) > 10 || Math.abs(cam.y) > 10 || Math.abs(cam.zoom - 1) > 0.05);
+}
+
+// --- Selectie obiect ---
+function selecteazaObiect(idx) {
+    sim.sel = idx;
+    selConn = -1;
+    const noMsg = document.getElementById('noSelMsg');
+    const props = document.getElementById('objProps');
+    const connSec = document.getElementById('connSection');
+    connSec.style.display = 'none';
+
+    if (idx < 0 || !obiecte[idx]) {
+        noMsg.style.display = '';
+        props.style.display = 'none';
+        document.getElementById('selName').textContent = 'Niciun obiect';
+        return;
+    }
+
+    const ob = obiecte[idx];
+    noMsg.style.display = 'none';
+    props.style.display = '';
+
+    const tipNume = ob.tip === 'bloc' ? 'Cub' : ob.tip === 'triunghi' ? 'Triunghi' : 'Cerc';
+    const label = tipNume + ' (' + ob.masa + ' kg)' + (ob.ancorat ? ' \u2693' : '');
+    document.getElementById('objPropsTitle').textContent = label;
+    document.getElementById('selName').textContent = label;
+
+    document.getElementById('sMasa').value = ob.masa;
+    document.getElementById('vMasa').textContent = ob.masa;
+    document.getElementById('sVx').value = ob.vx0;
+    document.getElementById('vVx').textContent = ob.vx0;
+    document.getElementById('sVy').value = ob.vy0;
+    document.getElementById('vVy').textContent = ob.vy0;
+    document.getElementById('sFr').value = ob.mu;
+    document.getElementById('chkAncorat').checked = ob.ancorat;
+    document.getElementById('sScala').value = ob.scala || 1;
+    document.getElementById('vScala').textContent = (ob.scala || 1).toFixed(1) + 'x';
+}
+
+function selecteazaConector(ci) {
+    selConn = ci;
+    sim.sel = -1;
+    const noMsg = document.getElementById('noSelMsg');
+    const props = document.getElementById('objProps');
+    const connSec = document.getElementById('connSection');
+
+    noMsg.style.display = 'none';
+    props.style.display = 'none';
+
+    if (ci < 0 || !conexiuni[ci]) {
+        connSec.style.display = 'none';
+        noMsg.style.display = '';
+        document.getElementById('selName').textContent = 'Niciun obiect';
+        return;
+    }
+
+    const conn = conexiuni[ci];
+    connSec.style.display = '';
+
+    const tipNume = conn.tip === 'sfoara' ? 'Sfoara' : 'Resort';
+    const fortaNume = conn.tip === 'sfoara' ? 'Tensiunea in fir' : 'Forta elastica';
+    document.getElementById('connPropsTitle').textContent = tipNume + ' — ' + fortaNume;
+    document.getElementById('selName').textContent = tipNume;
+
+    // Force info
+    document.getElementById('connForceLabel').textContent = fortaNume;
+    document.getElementById('connForceDot').style.background =
+        conn.tip === 'sfoara' ? 'var(--c-tensiune)' : 'var(--c-elastica)';
+    document.getElementById('connForceFormula').textContent =
+        conn.tip === 'sfoara' ? 'F = k · ΔL (cand intinsa)' : 'F = −k · Δx (Hooke)';
+
+    // Daca nu e fixata, actualizeaza lungimea la distanta curenta
+    if (!conn.lungimeFixata) {
+        const a2 = obiecte[conn.idxA], b2 = obiecte[conn.idxB];
+        if (a2 && b2) {
+            const ca2 = centruOb(a2), cb2 = centruOb(b2);
+            const dx2 = cb2.cx - ca2.cx, dy2 = cb2.cy - ca2.cy;
+            conn.lungime = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+        }
+    }
+    document.getElementById('sConnLen').value = conn.lungime;
+    document.getElementById('vConnLen').textContent = Math.round(conn.lungime);
+    document.getElementById('sConnLen').disabled = !conn.lungimeFixata;
+
+    document.getElementById('connKSection').style.display = conn.tip === 'resort' ? '' : 'none';
+    if (conn.tip === 'resort') {
+        document.getElementById('sConnK').value = conn.k;
+        document.getElementById('vConnK').textContent = conn.k;
+    }
+}
+
+function stergeConectorSelectat() {
+    if (selConn >= 0 && selConn < conexiuni.length) {
+        conexiuni.splice(selConn, 1);
+        selConn = -1;
+        selecteazaObiect(-1);
+        ist = []; sim.timp = 0; salveazaStare();
+    }
+}
+
+// --- Actualizare panou ---
+function actualizeazaPanou() {
+    document.getElementById('vG').textContent = sim.g.toFixed(2);
+    document.getElementById('vCd').textContent = sim.Cd.toFixed(2);
+
+    let N = 0, I = 0;
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        const ob = obiecte[sim.sel];
+        N = ob.peSol ? ob.masa * sim.g : 0;
+        I = ob.masa * Math.abs(ob.ax);
+        document.getElementById('vFr').textContent = ob.mu.toFixed(2);
+        document.getElementById('vMasa').textContent = ob.masa;
+        document.getElementById('vVx').textContent = ob.vx0;
+        document.getElementById('vVy').textContent = ob.vy0;
+    }
+    document.getElementById('vN').textContent = N.toFixed(1);
+    document.getElementById('vI').textContent = I.toFixed(1);
+
+    sliderFill('sG', sim.g, 0, 25, 'var(--c-greutate)');
+    sliderFill('sCd', sim.Cd, 0, 2, 'var(--c-drag)');
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        const ob = obiecte[sim.sel];
+        sliderFill('sMasa', ob.masa, 1, 100, 'var(--accent)');
+        sliderFill('sVx', ob.vx0, -200, 200, '#facc15');
+        sliderFill('sVy', ob.vy0, -200, 200, '#facc15');
+        sliderFill('sFr', ob.mu, 0, 2, 'var(--c-frecare)');
+    }
+    if (selConn >= 0 && conexiuni[selConn]) {
+        const conn = conexiuni[selConn];
+        sliderFill('sConnLen', conn.lungime, 20, 400, 'var(--c-tensiune)');
+        if (conn.tip === 'resort') sliderFill('sConnK', conn.k, 1, 500, 'var(--c-elastica)');
+
+        // Actualizeaza lungime dinamica daca nu e fixata
+        const a = obiecte[conn.idxA], b = obiecte[conn.idxB];
+        if (a && b) {
+            const ca = centruOb(a), cb = centruOb(b);
+            const dx = cb.cx - ca.cx, dy = cb.cy - ca.cy;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            if (!conn.lungimeFixata) {
+                conn.lungime = dist;
+                document.getElementById('sConnLen').value = conn.lungime;
+                document.getElementById('vConnLen').textContent = Math.round(conn.lungime);
+            }
+
+            // Calculeaza forta curenta din conector
+            let fMag = 0;
+            if (conn.lungimeFixata) {
+                if (conn.tip === 'sfoara') {
+                    if (dist > conn.lungime) fMag = 2000 * (dist - conn.lungime);
+                } else {
+                    fMag = Math.abs(conn.k * (dist - conn.lungime));
+                }
+            }
+            document.getElementById('vConnForce').textContent = fMag.toFixed(1);
+        } else {
+            document.getElementById('vConnForce').textContent = '0.0';
+        }
+        document.getElementById('sConnLen').disabled = !conn.lungimeFixata;
+    }
+
+    const prog = (sim.timp / sim.tMax) * 100;
+    document.getElementById('tSlider').style.setProperty('--prog', prog + '%');
+    document.getElementById('tSlider').value = (sim.timp / sim.tMax) * 1000;
+    document.getElementById('tDisp').textContent = sim.timp.toFixed(2) + 's';
+    document.getElementById('tDurDisp').textContent =
+        sim.tMax >= 60 ? (sim.tMax / 60).toFixed(0) + 'm' : sim.tMax.toFixed(1) + 's';
+}
+
+function sliderFill(id, val, min, max, col) {
+    const pct = ((val - min) / (max - min)) * 100;
+    document.getElementById(id).style.background =
+        `linear-gradient(90deg, ${col} 0%, ${col} ${pct}%, #2a2e3d ${pct}%)`;
+}
+
+function verificaEtichete() {
+    const el = document.getElementById('physLabel');
+    let txt = '';
+    if (sim.g <= 0.01) txt = 'Gravitatie zero! Spatiu cosmic — nimic nu cade.';
+    else if (sim.g <= 1.0) txt = 'Gravitatie foarte mica — ca pe Luna (g = 1.62).';
+    else if (sim.g >= 20) txt = 'Gravitatie extrema — ca pe Jupiter!';
+    if (txt) { el.textContent = txt; el.classList.add('visible'); }
+    else { el.classList.remove('visible'); }
+}
+
+function aplicaScenariu(tip) {
+    if (tip === 'luna') {
+        sim.g = 1.62;
+        document.getElementById('sG').value = 1.62;
+    } else if (tip === 'gheata') {
+        obiecte.forEach(o => o.mu = 0.01);
+        if (sim.sel >= 0) selecteazaObiect(sim.sel);
+    } else if (tip === 'jupiter') {
+        sim.g = 24.8;
+        document.getElementById('sG').value = 24.8;
+    } else if (tip === 'vid') {
+        sim.Cd = 0;
+        document.getElementById('sCd').value = 0;
+    }
+    verificaEtichete();
+    actualizeazaPanou();
+}
+
+function togglePlay() {
+    sim.activa = !sim.activa;
+    const b = document.getElementById('btnPlay');
+    b.innerHTML = sim.activa ? '&#9208;' : '&#9654;';
+    b.classList.toggle('active', sim.activa);
+
+    if (sim.activa && sim.timp < sim.dt * 2) {
+        obiecte.forEach(ob => {
+            if (!ob.ancorat) {
+                ob.vx = ob.vx0;
+                ob.vy = ob.vy0;
+            }
+        });
+        // Fixeaza lungimea conectorilor la distanta curenta
+        conexiuni.forEach(conn => {
+            if (!conn.lungimeFixata) {
+                const a = obiecte[conn.idxA], b = obiecte[conn.idxB];
+                if (a && b) {
+                    const ca = centruOb(a), cb = centruOb(b);
+                    const dx = cb.cx - ca.cx, dy = cb.cy - ca.cy;
+                    conn.lungime = Math.sqrt(dx * dx + dy * dy);
+                }
+                conn.lungimeFixata = true;
+            }
+        });
+    }
+}
+
+function laInceput() {
+    sim.activa = false;
+    document.getElementById('btnPlay').innerHTML = '&#9654;';
+    document.getElementById('btnPlay').classList.remove('active');
+    sim.timp = 0;
+    ist = [];
+    obiecte.forEach(ob => { ob.vx = 0; ob.vy = 0; ob.ax = 0; ob.ay = 0; ob.omega = 0; });
+    // Deblocheaza lungimea conectorilor
+    conexiuni.forEach(conn => { conn.lungimeFixata = false; });
+    salveazaStare();
+}
+
+function setViteza(v) {
+    sim.viteza = v;
+    document.querySelectorAll('.spd-btn').forEach(b => {
+        b.classList.toggle('active', parseFloat(b.textContent) === v);
+    });
+}
+
+function reseteaza() {
+    sim.activa = false; sim.timp = 0; sim.g = 9.81; sim.Cd = 0.47; sim.sel = -1; selConn = -1;
+    cam.x = 0; cam.y = 0; cam.zoom = 1;
+    document.getElementById('sZoom').value = 1; document.getElementById('vZoom').textContent = '1.0x';
+    document.getElementById('sG').value = 9.81;
+    document.getElementById('sCd').value = 0.47;
+    document.getElementById('btnPlay').innerHTML = '&#9654;';
+    document.getElementById('btnPlay').classList.remove('active');
+    ist = [];
+    obiecte = [];
+    conexiuni = [];
+    culoareIdx = 0;
+    modConector = null;
+    iesireModConector();
+    selecteazaObiect(-1);
+    salveazaStare();
+    verificaEtichete();
+    actualizeazaPanou();
+}
+
+function incepeConector(tip) {
+    modConector = { tip: tip, idxA: null };
+    document.getElementById('connOverlay').textContent = 'Click pe primul obiect';
+    document.getElementById('connOverlay').classList.add('visible');
+    document.getElementById('btn' + (tip === 'sfoara' ? 'Sfoara' : 'Resort')).classList.add('active-mode');
+}
+
+function iesireModConector() {
+    modConector = null;
+    document.getElementById('connOverlay').classList.remove('visible');
+    document.getElementById('btnSfoara').classList.remove('active-mode');
+    document.getElementById('btnResort').classList.remove('active-mode');
+}
+
+// --- Slidere ---
+document.getElementById('sG').addEventListener('input', function() {
+    sim.g = parseFloat(this.value);
+    taieIstoric(); verificaEtichete();
+});
+document.getElementById('sCd').addEventListener('input', function() {
+    sim.Cd = parseFloat(this.value);
+    document.getElementById('vCd').textContent = sim.Cd.toFixed(2);
+    taieIstoric();
+});
+document.getElementById('sMasa').addEventListener('input', function() {
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        obiecte[sim.sel].masa = parseInt(this.value);
+        document.getElementById('vMasa').textContent = this.value;
+        const ob = obiecte[sim.sel];
+        const tipNume = ob.tip === 'bloc' ? 'Cub' : ob.tip === 'triunghi' ? 'Triunghi' : 'Cerc';
+        const label = tipNume + ' (' + ob.masa + ' kg)' + (ob.ancorat ? ' \u2693' : '');
+        document.getElementById('objPropsTitle').textContent = label;
+        document.getElementById('selName').textContent = label;
+    }
+    taieIstoric();
+});
+document.getElementById('sVx').addEventListener('input', function() {
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        obiecte[sim.sel].vx0 = parseInt(this.value);
+        document.getElementById('vVx').textContent = this.value;
+    }
+    taieIstoric();
+});
+document.getElementById('sVy').addEventListener('input', function() {
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        obiecte[sim.sel].vy0 = parseInt(this.value);
+        document.getElementById('vVy').textContent = this.value;
+    }
+    taieIstoric();
+});
+document.getElementById('sFr').addEventListener('input', function() {
+    if (sim.sel >= 0 && obiecte[sim.sel]) obiecte[sim.sel].mu = parseFloat(this.value);
+    taieIstoric();
+});
+document.getElementById('chkAncorat').addEventListener('change', function() {
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        obiecte[sim.sel].ancorat = this.checked;
+        if (this.checked) {
+            obiecte[sim.sel].vx = 0;
+            obiecte[sim.sel].vy = 0;
+        }
+        selecteazaObiect(sim.sel); // refresh label
+    }
+    taieIstoric();
+});
+document.getElementById('sScala').addEventListener('input', function() {
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        const ob = obiecte[sim.sel];
+        const newScale = parseFloat(this.value);
+        const oldScale = ob.scala || 1;
+        const ratio = newScale / oldScale;
+        if (ob.tip === 'sfera') { ob.raza = Math.max(5, ob.raza * ratio); }
+        else { ob.w = Math.max(10, ob.w * ratio); ob.h = Math.max(10, ob.h * ratio); }
+        ob.scala = newScale;
+        document.getElementById('vScala').textContent = newScale.toFixed(1) + 'x';
+    }
+    taieIstoric();
+});
+document.getElementById('sConnLen').addEventListener('input', function() {
+    if (selConn >= 0 && conexiuni[selConn]) {
+        conexiuni[selConn].lungime = parseInt(this.value);
+        document.getElementById('vConnLen').textContent = this.value;
+    }
+    taieIstoric();
+});
+document.getElementById('sConnK').addEventListener('input', function() {
+    if (selConn >= 0 && conexiuni[selConn]) {
+        conexiuni[selConn].k = parseInt(this.value);
+        document.getElementById('vConnK').textContent = this.value;
+    }
+    taieIstoric();
+});
+
+function taieIstoric() {
+    const idx = ist.findIndex(s => s.t >= sim.timp);
+    if (idx >= 0) ist = ist.slice(0, idx + 1);
+}
+
+document.getElementById('tSlider').addEventListener('input', function() {
+    const tinta = (parseInt(this.value) / 1000) * sim.tMax;
+    let best = 0, dMin = Infinity;
+    for (let i = 0; i < ist.length; i++) {
+        const d = Math.abs(ist[i].t - tinta);
+        if (d < dMin) { dMin = d; best = i; }
+    }
+    restaureazaStare(best);
+});
+
+// --- Drag + selectie + camera panning ---
+let drag = null;
+let pan = null;
+
+// --- Gizmo state ---
+let gizmo = null;
+let gizmoHover = null; // tipul handle-ului hovered: 'rotate','scale','rampAngle' sau null
+const GIZMO_HANDLE = 11;
+const GIZMO_ROT_RADIUS = 55;
+const GIZMO_ROT_TOL = 14;
+
+function screenToWorld(sx, sy) {
+    const w = W(), h = H();
+    // Zoom centrat pe mijlocul canvasului
+    const wx = (sx - w / 2) / cam.zoom + w / 2 + cam.x;
+    const wy = (sy - h / 2) / cam.zoom + h / 2 + cam.y;
+    return { wx, wy };
+}
+
+function worldToScreen(wx, wy) {
+    const w = W(), h = H();
+    return {
+        sx: (wx - w / 2 - cam.x) * cam.zoom + w / 2,
+        sy: (wy - h / 2 - cam.y) * cam.zoom + h / 2
+    };
+}
+
+// --- Gizmo helpers ---
+function getScaleHandles(ob) {
+    if (ob.tip === 'sfera') {
+        return [
+            { x: ob.x, y: ob.y - ob.raza },
+            { x: ob.x + ob.raza, y: ob.y },
+            { x: ob.x, y: ob.y + ob.raza },
+            { x: ob.x - ob.raza, y: ob.y }
+        ];
+    }
+    const bb = getAABB(ob);
+    return [
+        { x: bb.minX, y: bb.minY },
+        { x: bb.maxX, y: bb.minY },
+        { x: bb.maxX, y: bb.maxY },
+        { x: bb.minX, y: bb.maxY }
+    ];
+}
+
+function getRampAngleHandle(ob) {
+    const verts = vertexTriunghi(ob);
+    const st = ob.subtip || 'normal';
+    if (st === 'rampa-st') return verts[2];
+    if (st === 'rampa-dr') return verts[0];
+    return verts[0];
+}
+
+function hitTestGizmo(sx, sy) {
+    if (sim.sel < 0 || !obiecte[sim.sel]) return null;
+    if (sim.activa) return null;
+    const ob = obiecte[sim.sel];
+    const c = centruOb(ob);
+    const cs = worldToScreen(c.cx, c.cy);
+
+    // 1. Rotation ring
+    const distC = Math.hypot(sx - cs.sx, sy - cs.sy);
+    if (Math.abs(distC - GIZMO_ROT_RADIUS) < GIZMO_ROT_TOL) {
+        return {
+            type: 'rotate', idx: sim.sel,
+            startAngle: Math.atan2(sy - cs.sy, sx - cs.sx),
+            startRot: ob.rotatie || 0
+        };
+    }
+
+    // 2. Ramp angle handle (triangles only)
+    if (ob.tip === 'triunghi' && (ob.subtip === 'rampa-st' || ob.subtip === 'rampa-dr')) {
+        const handle = getRampAngleHandle(ob);
+        const hs = worldToScreen(handle.x, handle.y);
+        if (Math.abs(sx - hs.sx) < GIZMO_HANDLE + 5 && Math.abs(sy - hs.sy) < GIZMO_HANDLE + 5) {
+            return {
+                type: 'rampAngle', idx: sim.sel,
+                startW: ob.w, startH: ob.h
+            };
+        }
+    }
+
+    return null;
+}
+
+// --- Gizmo rendering (rotation + ramp angle only, scale is in panel) ---
+function deseneazaGizmo() {
+    if (sim.sel < 0 || !obiecte[sim.sel]) return;
+    if (sim.activa) return;
+
+    const ob = obiecte[sim.sel];
+    const c = centruOb(ob);
+    const cs = worldToScreen(c.cx, c.cy);
+
+    ctx.save();
+
+    // === ROTATION RING ===
+    const rotHovered = gizmoHover === 'rotate' || (gizmo && gizmo.type === 'rotate');
+    ctx.strokeStyle = rotHovered ? 'rgba(52, 211, 153, 0.7)' : 'rgba(52, 211, 153, 0.35)';
+    ctx.lineWidth = rotHovered ? 4 : 3;
+    ctx.beginPath();
+    ctx.arc(cs.sx, cs.sy, GIZMO_ROT_RADIUS, 0, Math.PI * 2);
+    ctx.stroke();
+
+    // Arc colorat care arata unghiul curent
+    const rotRad = (ob.rotatie || 0) * Math.PI / 180;
+    if (Math.abs(ob.rotatie || 0) > 0.5) {
+        ctx.strokeStyle = '#34d399';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(cs.sx, cs.sy, GIZMO_ROT_RADIUS, -Math.PI / 2, -Math.PI / 2 + rotRad, rotRad < 0);
+        ctx.stroke();
+    }
+
+    // Handle de rotatie — cerc cu icon ↻
+    const indX = cs.sx + GIZMO_ROT_RADIUS * Math.cos(rotRad - Math.PI / 2);
+    const indY = cs.sy + GIZMO_ROT_RADIUS * Math.sin(rotRad - Math.PI / 2);
+    const rotHandleR = rotHovered ? 10 : 8;
+    ctx.shadowColor = '#34d399';
+    ctx.shadowBlur = rotHovered ? 14 : 8;
+    ctx.fillStyle = rotHovered ? '#34d399' : '#10b981';
+    ctx.beginPath();
+    ctx.arc(indX, indY, rotHandleR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Mini arc icon
+    ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(indX, indY, 4, -0.5, 2.5); ctx.stroke();
+
+    // Rotation label (badge)
+    const rotStr = (((ob.rotatie || 0) % 360 + 360) % 360).toFixed(0) + '\u00B0';
+    ctx.font = 'bold 11px JetBrains Mono';
+    const rotW = ctx.measureText(rotStr).width + 12;
+    const rlx = cs.sx - rotW / 2;
+    const rly = cs.sy - GIZMO_ROT_RADIUS - 24;
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
+    ctx.beginPath(); ctx.roundRect(rlx, rly, rotW, 18, 4); ctx.fill();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+    ctx.fillText(rotStr, cs.sx, rly + 13);
+
+    // === RAMP ANGLE HANDLE (doar triunghiuri rampa) ===
+    if (ob.tip === 'triunghi' && (ob.subtip === 'rampa-st' || ob.subtip === 'rampa-dr')) {
+        const handle = getRampAngleHandle(ob);
+        const hs = worldToScreen(handle.x, handle.y);
+
+        const rampHov = gizmoHover === 'rampAngle' || (gizmo && gizmo.type === 'rampAngle');
+        ctx.shadowColor = '#f87171';
+        ctx.shadowBlur = rampHov ? 14 : 8;
+        ctx.fillStyle = rampHov ? '#f87171' : '#ef4444';
+        const DS = rampHov ? 11 : 9;
+        ctx.beginPath();
+        ctx.moveTo(hs.sx, hs.sy - DS); ctx.lineTo(hs.sx + DS, hs.sy);
+        ctx.lineTo(hs.sx, hs.sy + DS); ctx.lineTo(hs.sx - DS, hs.sy);
+        ctx.closePath(); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 2; ctx.stroke();
+
+        // Icon unghi ∠
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(hs.sx - 3, hs.sy + 3); ctx.lineTo(hs.sx - 3, hs.sy - 1);
+        ctx.lineTo(hs.sx + 3, hs.sy + 3); ctx.stroke();
+
+        // Alpha badge
+        const alpha = Math.atan2(ob.h, ob.w) * 180 / Math.PI;
+        const aStr = '\u03B1 ' + alpha.toFixed(1) + '\u00B0';
+        ctx.font = 'bold 11px JetBrains Mono';
+        const aW = ctx.measureText(aStr).width + 12;
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.85)';
+        ctx.beginPath(); ctx.roundRect(hs.sx + 14, hs.sy - 12, aW, 18, 4); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+        ctx.fillText(aStr, hs.sx + 20, hs.sy + 1);
+    }
+
+    // Tooltip on hover
+    if (gizmoHover) {
+        let tipText = '', tipColor = '';
+        if (gizmoHover === 'rotate') {
+            tipText = '\u21BB Trage pentru a roti  (Shift = snap 5\u00B0)';
+            tipColor = 'rgba(16, 185, 129, 0.9)';
+        } else if (gizmoHover === 'rampAngle') {
+            tipText = '\u2220 Trage pentru a schimba unghiul rampei';
+            tipColor = 'rgba(239, 68, 68, 0.9)';
+        }
+        if (tipText) {
+            ctx.font = '11px DM Sans';
+            const tw = ctx.measureText(tipText).width + 16;
+            const tx = cs.sx - tw / 2, ty = cs.sy + GIZMO_ROT_RADIUS + 14;
+            ctx.fillStyle = tipColor;
+            ctx.beginPath(); ctx.roundRect(tx, ty, tw, 22, 6); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+            ctx.fillText(tipText, cs.sx, ty + 15);
+        }
+    }
+
+    ctx.restore();
+}
+
+canvas.addEventListener('mousedown', function(e) {
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+
+    if (e.button === 2 || e.button === 1) {
+        e.preventDefault();
+        pan = { startX: e.clientX, startY: e.clientY, startCamX: cam.x, startCamY: cam.y };
+        canvas.style.cursor = 'move';
+        return;
+    }
+
+    const { wx, wy } = screenToWorld(sx, sy);
+
+    // Gizmo hit-test (prioritar)
+    const gizmoHit = hitTestGizmo(sx, sy);
+    if (gizmoHit) {
+        gizmo = gizmoHit;
+        window._gizmoHintShown = true; // ascunde hint dupa prima interactiune
+        canvas.style.cursor = gizmo.type === 'rotate' ? 'grabbing' : 'pointer';
+        return;
+    }
+
+    // Mod conector
+    if (modConector) {
+        let found = -1;
+        for (let i = obiecte.length - 1; i >= 0; i--) {
+            if (hitTest(obiecte[i], wx, wy)) { found = i; break; }
+        }
+        if (found >= 0) {
+            if (modConector.idxA === null) {
+                modConector.idxA = found;
+                document.getElementById('connOverlay').textContent = 'Click pe al doilea obiect';
+            } else if (found !== modConector.idxA) {
+                const ca = centruOb(obiecte[modConector.idxA]);
+                const cb = centruOb(obiecte[found]);
+                const dx = cb.cx - ca.cx, dy = cb.cy - ca.cy;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                conexiuni.push({
+                    tip: modConector.tip,
+                    idxA: modConector.idxA,
+                    idxB: found,
+                    lungime: dist,
+                    lungimeFixata: false,
+                    k: 50,
+                    culoare: modConector.tip === 'sfoara' ? '#a78bfa' : '#f87171'
+                });
+                ist = []; sim.timp = 0; salveazaStare();
+                iesireModConector();
+                selecteazaConector(conexiuni.length - 1);
+            }
+        }
+        return;
+    }
+
+    // Normal click
+    let found = -1;
+    for (let i = obiecte.length - 1; i >= 0; i--) {
+        if (hitTest(obiecte[i], wx, wy)) { found = i; break; }
+    }
+
+    if (found >= 0) {
+        const ob = obiecte[found];
+        drag = { idx: found, ox: wx - ob.x, oy: wy - ob.y };
+        selecteazaObiect(found);
+        sim.activa = false;
+        document.getElementById('btnPlay').innerHTML = '&#9654;';
+        document.getElementById('btnPlay').classList.remove('active');
+    } else {
+        let foundConn = -1;
+        for (let ci = conexiuni.length - 1; ci >= 0; ci--) {
+            if (hitTestConector(conexiuni[ci], wx, wy)) { foundConn = ci; break; }
+        }
+        if (foundConn >= 0) {
+            selecteazaConector(foundConn);
+        } else {
+            selecteazaObiect(-1);
+        }
+    }
+});
+
+canvas.addEventListener('mousemove', function(e) {
+    if (pan) {
+        const dx = e.clientX - pan.startX;
+        const dy = e.clientY - pan.startY;
+        cam.x = pan.startCamX - dx / cam.zoom;
+        cam.y = pan.startCamY - dy / cam.zoom;
+        return;
+    }
+
+    const r = canvas.getBoundingClientRect();
+    const sx = e.clientX - r.left, sy = e.clientY - r.top;
+
+    // Gizmo drag
+    if (gizmo) {
+        const ob = obiecte[gizmo.idx];
+        if (!ob) { gizmo = null; return; }
+        const c = centruOb(ob);
+        const cs = worldToScreen(c.cx, c.cy);
+
+        if (gizmo.type === 'rotate') {
+            const mouseAngle = Math.atan2(sy - cs.sy, sx - cs.sx);
+            let delta = (mouseAngle - gizmo.startAngle) * 180 / Math.PI;
+            ob.rotatie = gizmo.startRot + delta;
+            // Snap la 5° cu Shift
+            if (e.shiftKey) ob.rotatie = Math.round(ob.rotatie / 5) * 5;
+        } else if (gizmo.type === 'rampAngle') {
+            const { wx: mwx, wy: mwy } = screenToWorld(sx, sy);
+            const hyp = Math.sqrt(gizmo.startW * gizmo.startW + gizmo.startH * gizmo.startH);
+            // Base point depends on ramp direction
+            let baseX, baseY;
+            if (ob.subtip === 'rampa-st') {
+                baseX = ob.x; baseY = ob.y + ob.h;
+            } else {
+                baseX = ob.x + ob.w; baseY = ob.y + ob.h;
+            }
+            const ddx = Math.abs(mwx - baseX), ddy = Math.abs(baseY - mwy);
+            let alpha = Math.atan2(ddy, ddx);
+            alpha = Math.max(5 * Math.PI / 180, Math.min(85 * Math.PI / 180, alpha));
+            ob.w = Math.max(10, hyp * Math.cos(alpha));
+            ob.h = Math.max(10, hyp * Math.sin(alpha));
+        }
+
+        ist = []; sim.timp = 0;
+        salveazaStare();
+        return;
+    }
+
+    // Gizmo hover cursor + tooltip
+    if (!drag && sim.sel >= 0 && !sim.activa) {
+        const gh = hitTestGizmo(sx, sy);
+        if (gh) {
+            gizmoHover = gh.type;
+            canvas.style.cursor = gh.type === 'rotate' ? 'grab' : 'pointer';
+            return;
+        } else {
+            gizmoHover = null;
+        }
+    } else {
+        gizmoHover = null;
+    }
+
+    if (!drag) { canvas.style.cursor = 'default'; return; }
+    const { wx, wy } = screenToWorld(sx, sy);
+    const ob = obiecte[drag.idx];
+    let newX = wx - drag.ox, newY = wy - drag.oy;
+    if (ob.snap) { newX = Math.round(newX / 20) * 20; newY = Math.round(newY / 20) * 20; }
+    ob.x = newX; ob.y = newY;
+    ob.vx = 0; ob.vy = 0;
+    ist = []; sim.timp = 0;
+    salveazaStare();
+});
+
+canvas.addEventListener('mouseup', () => {
+    drag = null;
+    if (gizmo) { gizmo = null; taieIstoric(); }
+    if (pan) { pan = null; canvas.style.cursor = 'grab'; }
+    canvas.style.cursor = 'default';
+});
+canvas.addEventListener('mouseleave', () => {
+    drag = null;
+    if (gizmo) { gizmo = null; }
+    if (pan) { pan = null; canvas.style.cursor = 'grab'; }
+});
+
+canvas.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    // Scroll wheel = zoom
+    const delta = -e.deltaY * 0.002;
+    setZoom(cam.zoom + delta * cam.zoom);
+}, { passive: false });
+
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+
+function recenterCamera() { cam.x = 0; cam.y = 0; cam.zoom = 1; document.getElementById('sZoom').value = 1; document.getElementById('vZoom').textContent = '1.0x'; }
+
+function togglePanel() {
+    const panel = document.getElementById('sidePanel');
+    const btn = document.getElementById('panelToggle');
+    panel.classList.toggle('visible');
+    btn.textContent = panel.classList.contains('visible') ? '✕ Inchide' : '☰ Meniu';
+    setTimeout(resizeCanvas, 350); // recalculeaza canvas dupa animatie
+}
+
+function setZoom(val) {
+    cam.zoom = Math.max(0.2, Math.min(3, val));
+    document.getElementById('sZoom').value = cam.zoom;
+    document.getElementById('vZoom').textContent = cam.zoom.toFixed(1) + 'x';
+}
+document.getElementById('sZoom').addEventListener('input', function() {
+    setZoom(parseFloat(this.value));
+});
+
+function setDurata(sec) {
+    sim.tMax = sec;
+    document.getElementById('tDurDisp').textContent =
+        sec >= 60 ? (sec / 60).toFixed(0) + 'm' : sec + '.0s';
+    document.querySelectorAll('.dur-btn').forEach(b => {
+        const val = b.textContent;
+        let bSec;
+        if (val.endsWith('m')) bSec = parseFloat(val) * 60;
+        else bSec = parseFloat(val);
+        b.classList.toggle('active', bSec === sec);
+    });
+}
+
+// --- Bucla animatie ---
+let lastTs = 0, acum = 0;
+
+function bucla(ts) {
+    requestAnimationFrame(bucla);
+    if (lastTs === 0) lastTs = ts;
+    const dtReal = Math.min((ts - lastTs) / 1000, 0.05);
+    lastTs = ts;
+
+    if (sim.activa && sim.timp < sim.tMax) {
+        acum += dtReal * sim.viteza;
+        while (acum >= sim.dt) {
+            pasFizic(sim.dt);
+            sim.timp += sim.dt;
+            acum -= sim.dt;
+            salveazaStare();
+            if (sim.timp >= sim.tMax) {
+                sim.activa = false;
+                document.getElementById('btnPlay').innerHTML = '&#9654;';
+                document.getElementById('btnPlay').classList.remove('active');
+                break;
+            }
+        }
+    }
+
+    desenCadru();
+    actualizeazaPanou();
+}
+
+function setRotatie(deg) {
+    if (sim.sel >= 0 && obiecte[sim.sel]) {
+        obiecte[sim.sel].rotatie = deg;
+    }
+}
+
+function stergeObiectSelectat() {
+    if (sim.sel < 0) return;
+    const delIdx = sim.sel;
+    conexiuni = conexiuni.filter(c => c.idxA !== delIdx && c.idxB !== delIdx);
+    conexiuni.forEach(c => {
+        if (c.idxA > delIdx) c.idxA--;
+        if (c.idxB > delIdx) c.idxB--;
+    });
+    obiecte.splice(delIdx, 1);
+    sim.sel = -1; selConn = -1;
+    selecteazaObiect(-1);
+    ist = []; sim.timp = 0; salveazaStare();
+}
+
+// --- Tastatura ---
+document.addEventListener('keydown', function(e) {
+    if (e.code === 'Escape' && modConector) {
+        iesireModConector();
+        return;
+    }
+    if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
+    else if (e.code === 'KeyR') reseteaza();
+    else if (e.code === 'Delete') {
+        if (selConn >= 0) {
+            stergeConectorSelectat();
+        } else {
+            stergeObiectSelectat();
+        }
+    }
+});
+
+// --- Init ---
+construiesteGridPreseturi();
+construiesteGridTeme();
+salveazaStare();
+verificaEtichete();
+actualizeazaPanou();
+requestAnimationFrame(bucla);
+</script>
+</body>
+</html>
