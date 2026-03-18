@@ -1,6 +1,6 @@
 # ⚛️ Sandbox Fizica 2D
 
-**Simulator fizic 2D interactiv** — proiect de fizica realizat de **Chris**.
+**Simulator fizic 2D interactiv** — proiect de fizica realizat de **Cristian Todirenchi**.
 
 Un singur fisier HTML (~3760 linii), fara dependinte externe, ruleaza direct in browser.
 
@@ -167,4 +167,4 @@ Obiectele pe suprafete ancorate au un restoring torque care le aliniaza la unghi
 
 ---
 
-*Proiect de fizica — Chris*
+*Proiect de fizica — Cristian Todirenchi*
