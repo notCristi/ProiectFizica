@@ -1,0 +1,2 @@
+# ProiectFizica
+Proiect la fizică 
