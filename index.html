@@ -1686,20 +1686,19 @@ function pasFizic(dt) {
         if (baza >= sol) {
             ob.y -= (baza - sol);
             ob.peSol = true;
+            // Snap vertical velocity — agresiv pentru a elimina micro-bounce
             if (ob.vy > 0) ob.vy *= -0.2;
-            if (Math.abs(ob.vy) < 1.5) ob.vy = 0;
+            if (Math.abs(ob.vy) < 2.0) ob.vy = 0;
 
             // Actual normal force: N = mg - F_vertical_up (applied force + connectors pushing up)
-            // This is the force the ground exerts upward to prevent penetration
             let Nground = m * sim.g;
             if (ob.Fapl && ob.Fapl > 0) {
                 const alphaRad = (ob.alfaApl || 0) * Math.PI / 180;
-                Nground -= ob.Fapl * Math.sin(alphaRad); // sin(α)>0 means upward component
+                Nground -= ob.Fapl * Math.sin(alphaRad);
             }
             Nground = Math.max(0, Nground);
-            ob._Nground = Nground; // store for display
+            ob._Nground = Nground;
 
-            // If normal force is 0, object lifts off
             if (Nground <= 0.01) {
                 ob.peSol = false;
             }
@@ -1707,22 +1706,24 @@ function pasFizic(dt) {
             // Ground friction (static + kinetic) using ACTUAL normal force
             const muK = ob.mu;
             const muS = muK * 1.4;
-            const frictionAccel = muK * Nground / m; // a_friction = μ·N/m
-            if (Math.abs(ob.vx) > 0.1) {
-                const dvMax = Math.abs(ob.vx); // don't overshoot through zero
+            const frictionAccel = muK * Nground / m;
+            if (Math.abs(ob.vx) > 0.5) {
+                // Kinetic friction — decelereaza
+                const dvMax = Math.abs(ob.vx);
                 ob.vx -= Math.sign(ob.vx) * Math.min(frictionAccel * dt, dvMax);
-            } else if (Math.abs(ob.vx) > 0.001) {
-                // Static friction zone — check if net horizontal force exceeds μ_s·N
-                const netHorizForce = Math.abs(fx); // fx still in scope from above
+            } else {
+                // Zona statica — verifica daca forta neta depaseste frecarea statica
+                const netHorizForce = Math.abs(fx);
                 const staticFrictionMax = muS * Nground;
                 if (netHorizForce <= staticFrictionMax) {
-                    ob.vx = 0; // static friction holds object in place
+                    ob.vx = 0; // frecarea statica tine pe loc
                 } else {
-                    ob.vx *= (1 - muS * 5 * dt);
+                    // Forta depaseste — incepe sa se miste
+                    ob.vx += (Math.sign(fx) * (netHorizForce - staticFrictionMax) / m) * dt;
                 }
-            } else {
-                ob.vx = 0;
             }
+            // Snap final — elimina micro-oscilatii
+            if (Math.abs(ob.vx) < 0.08) ob.vx = 0;
 
             // Ground rotation stabilization
             if (ob.tip !== 'sfera') {
@@ -2391,10 +2392,10 @@ const GRAFICE = [
     { id: 'dist_t',  name: 'Distanta de la start', xLabel: 'Timp [s]', yLabel: 'd [m]',     getY: ob => { const cx=(ob.tip==='sfera'?ob.x:ob.x+ob.w/2); const cy=(ob.tip==='sfera'?ob.y:ob.y+ob.h/2); const x0=ob._startX||cx; const y0=ob._startY||cy; return Math.sqrt((cx-x0)**2+(cy-y0)**2)/80; }, color: '#c4b5fd', cat: 'Pozitie' },
     { id: 'traj',    name: 'Traiectorie (Y vs X)', xLabel: 'x [m]', yLabel: 'h [m]',       getX: ob => (ob.tip==='sfera'?ob.x:ob.x+ob.w/2)/80, getY: ob => { const sol=nivelSol(); return (sol-(ob.tip==='sfera'?ob.y:ob.y+ob.h/2))/80; }, color: '#67e8f9', cat: 'Pozitie' },
     // Viteza
-    { id: 'vx_t',    name: 'Viteza pe X',         xLabel: 'Timp [s]', yLabel: 'Vx [m/s]',   getY: ob => ob.vx,         color: '#5b9bf5', cat: 'Viteza' },
-    { id: 'vy_t',    name: 'Viteza pe Y',         xLabel: 'Timp [s]', yLabel: 'Vy [m/s]',   getY: ob => ob.vy,         color: '#38bdf8', cat: 'Viteza' },
-    { id: 'v_t',     name: 'Viteza totala',        xLabel: 'Timp [s]', yLabel: 'V [m/s]',    getY: ob => Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy), color: '#06d6a0', cat: 'Viteza' },
-    { id: 'v2_t',    name: 'Viteza la patrat',     xLabel: 'Timp [s]', yLabel: 'V² [m²/s²]', getY: ob => ob.vx*ob.vx+ob.vy*ob.vy, color: '#2dd4bf', cat: 'Viteza' },
+    { id: 'vx_t',    name: 'Viteza pe X',         xLabel: 'Timp [s]', yLabel: 'Vx [m/s]',   getY: ob => Math.abs(ob.vx)<0.08?0:ob.vx,         color: '#5b9bf5', cat: 'Viteza' },
+    { id: 'vy_t',    name: 'Viteza pe Y',         xLabel: 'Timp [s]', yLabel: 'Vy [m/s]',   getY: ob => Math.abs(ob.vy)<0.08?0:ob.vy,         color: '#38bdf8', cat: 'Viteza' },
+    { id: 'v_t',     name: 'Viteza totala',        xLabel: 'Timp [s]', yLabel: 'V [m/s]',    getY: ob => { const v=Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy); return v<0.1?0:v; }, color: '#06d6a0', cat: 'Viteza' },
+    { id: 'v2_t',    name: 'Viteza la patrat',     xLabel: 'Timp [s]', yLabel: 'V² [m²/s²]', getY: ob => { const v2=ob.vx*ob.vx+ob.vy*ob.vy; return v2<0.01?0:v2; }, color: '#2dd4bf', cat: 'Viteza' },
     // Acceleratie
     { id: 'ax_t',    name: 'Acceleratie pe X',    xLabel: 'Timp [s]', yLabel: 'ax [m/s²]',  getY: ob => ob.ax,         color: '#e0e0e0', cat: 'Acceleratie' },
     { id: 'ay_t',    name: 'Acceleratie pe Y',    xLabel: 'Timp [s]', yLabel: 'ay [m/s²]',  getY: ob => ob.ay,         color: '#adb5bd', cat: 'Acceleratie' },
@@ -2405,7 +2406,7 @@ const GRAFICE = [
     // Forte
     { id: 'G_t',     name: 'Greutate',            xLabel: 'Timp [s]', yLabel: 'G [N]',      getY: ob => ob.masa*sim.g, color: '#e63946', cat: 'Forte' },
     { id: 'N_t',     name: 'Forta normala',        xLabel: 'Timp [s]', yLabel: 'N [N]',      getY: ob => ob._contacte?ob._contacte.reduce((s,c)=>s+c.normalForce,0)+(ob.peSol?ob.masa*sim.g:0):0, color: '#06d6a0', cat: 'Forte' },
-    { id: 'Ff_t',    name: 'Forta de frecare',     xLabel: 'Timp [s]', yLabel: 'Ff [N]',     getY: ob => ob._contacte?ob._contacte.reduce((s,c)=>s+c.frictionForce,0)+(ob.peSol?ob.mu*ob.masa*sim.g:0):0, color: '#ff9f1c', cat: 'Forte' },
+    { id: 'Ff_t',    name: 'Forta de frecare',     xLabel: 'Timp [s]', yLabel: 'Ff [N]',     getY: ob => { let ff=ob._contacte?ob._contacte.reduce((s,c)=>s+c.frictionForce,0):0; if(ob.peSol&&(Math.abs(ob.vx)>0.5||(ob.Fapl&&ob.Fapl>0.1)||ob.ax0)){ff+=ob.mu*(ob._Nground||ob.masa*sim.g);}return ff; }, color: '#ff9f1c', cat: 'Forte' },
     { id: 'Fd_t',    name: 'Rezistenta aerului',   xLabel: 'Timp [s]', yLabel: 'Fd [N]',     getY: ob => { const v=Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy); return 0.5*sim.Cd*1.225*arieOb(ob)*v*0.0001*v; }, color: '#00b4d8', cat: 'Forte' },
     { id: 'Fapl_t',  name: 'Forta aplicata',       xLabel: 'Timp [s]', yLabel: 'Fapl [N]',   getY: ob => ob.Fapl||0, color: '#fbbf24', cat: 'Forte' },
     { id: 'Fnet_t',  name: 'Forta rezultanta',     xLabel: 'Timp [s]', yLabel: 'Frez [N]',   getY: ob => Math.sqrt((ob.masa*ob.ax)**2+(ob.masa*ob.ay)**2), color: '#fb7185', cat: 'Forte' },
@@ -2421,7 +2422,7 @@ const GRAFICE = [
     // Putere
     { id: 'P_t',     name: 'Putere instantanee',    xLabel: 'Timp [s]', yLabel: 'P [W]',     getY: ob => { const F=Math.sqrt((ob.masa*ob.ax)**2+(ob.masa*ob.ay)**2); const v=Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy); return F*v; }, color: '#fb923c', cat: 'Putere' },
     // Relatii
-    { id: 'Ff_v',    name: 'Frecare vs. Viteza',   xLabel: 'V [m/s]', yLabel: 'Ff [N]',   getX: ob => Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy), getY: ob => ob._contacte?ob._contacte.reduce((s,c)=>s+c.frictionForce,0)+(ob.peSol?ob.mu*ob.masa*sim.g:0):0, color: '#ff9f1c', cat: 'Relatii' },
+    { id: 'Ff_v',    name: 'Frecare vs. Viteza',   xLabel: 'V [m/s]', yLabel: 'Ff [N]',   getX: ob => { const v=Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy); return v<0.1?0:v; }, getY: ob => { let ff=ob._contacte?ob._contacte.reduce((s,c)=>s+c.frictionForce,0):0; if(ob.peSol&&(Math.abs(ob.vx)>0.5||(ob.Fapl&&ob.Fapl>0.1)||ob.ax0)){ff+=ob.mu*(ob._Nground||ob.masa*sim.g);}return ff; }, color: '#ff9f1c', cat: 'Relatii' },
     { id: 'Fd_v',    name: 'Drag vs. Viteza',      xLabel: 'V [m/s]', yLabel: 'Fd [N]',   getX: ob => Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy), getY: ob => { const v=Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy); return 0.5*sim.Cd*1.225*arieOb(ob)*v*0.0001*v; }, color: '#00b4d8', cat: 'Relatii' },
     { id: 'Ec_v',    name: 'En. cinetica vs. Viteza', xLabel: 'V [m/s]', yLabel: 'Ec [J]', getX: ob => Math.sqrt(ob.vx*ob.vx+ob.vy*ob.vy), getY: ob => 0.5*ob.masa*(ob.vx*ob.vx+ob.vy*ob.vy), color: '#f87171', cat: 'Relatii' },
     { id: 'Ec_h',    name: 'En. cinetica vs. Inaltime', xLabel: 'h [m]', yLabel: 'Ec [J]', getX: ob => { const sol=nivelSol(); return (sol-(ob.tip==='sfera'?ob.y:ob.y+ob.h/2))/80; }, getY: ob => 0.5*ob.masa*(ob.vx*ob.vx+ob.vy*ob.vy), color: '#f472b6', cat: 'Relatii' },
@@ -2770,23 +2771,23 @@ setInterval(() => { if (_graficFS) redeseneazaGraficFS(); }, 200);
 function sageata(x1, y1, x2, y2, col, eticheta, val, punctat) {
     const dx = x2 - x1, dy = y2 - y1;
     const lung = Math.sqrt(dx * dx + dy * dy);
-    if (lung < 2) return;
+    if (lung < 3) return;
     ctx.save();
 
-    // Linie cu grosime proportionala
-    const lw = Math.min(2 + lung / 50, 4);
+    // Linie cu grosime proportionala — mai groasa
+    const lw = Math.min(2.5 + lung / 40, 5);
     ctx.strokeStyle = col;
     ctx.lineWidth = lw;
-    ctx.globalAlpha = Math.min(0.6 + lung / 80, 1);
-    if (punctat) ctx.setLineDash([5, 3]);
+    ctx.globalAlpha = Math.min(0.7 + lung / 60, 1);
+    if (punctat) ctx.setLineDash([6, 4]);
 
     ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
     ctx.setLineDash([]);
 
-    // Varf sageata (triunghi plin)
+    // Varf sageata (triunghi plin) — mai mare
     const u = Math.atan2(dy, dx);
-    const d = Math.min(10, Math.max(5, lung * 0.25));
-    const halfAngle = 0.35;
+    const d = Math.min(14, Math.max(7, lung * 0.22));
+    const halfAngle = 0.4;
     ctx.fillStyle = col;
     ctx.beginPath();
     ctx.moveTo(x2, y2);
@@ -2795,24 +2796,24 @@ function sageata(x1, y1, x2, y2, col, eticheta, val, punctat) {
     ctx.closePath();
     ctx.fill();
 
-    // Eticheta cu valoare (doar daca toggle-ul e activ)
+    // Eticheta cu valoare — font mai mare, pozitionata la capatul sagetii
     if (arataEticheteVectori) {
         const valStr = typeof val === 'number' && val > 0 ? eticheta + '=' + val.toFixed(1) : eticheta;
-        ctx.font = 'bold 9px JetBrains Mono';
+        ctx.font = 'bold 11px JetBrains Mono';
         const textW = ctx.measureText(valStr).width;
 
-        // Pozitia etichetei: perpendicular pe sageata, la mijloc
-        const mx = x1 + dx * 0.5, my = y1 + dy * 0.5;
+        // Pozitia etichetei: la capatul sagetii, offset perpendicular
+        const tipX = x2, tipY = y2;
         const perpX = -dy / lung, perpY = dx / lung;
-        const labelOff = 10;
-        const lx = mx + perpX * labelOff - textW / 2;
-        const ly = my + perpY * labelOff;
+        const labelOff = 14;
+        const lx = tipX + perpX * labelOff - textW / 2;
+        const ly = tipY + perpY * labelOff;
 
-        // Background pill
-        ctx.globalAlpha = 0.7;
-        ctx.fillStyle = 'rgba(0,0,0,0.55)';
+        // Background pill — mai vizibil
+        ctx.globalAlpha = 0.85;
+        ctx.fillStyle = 'rgba(0,0,0,0.7)';
         ctx.beginPath();
-        ctx.roundRect(lx - 3, ly - 9, textW + 6, 12, 3);
+        ctx.roundRect(lx - 4, ly - 11, textW + 8, 15, 4);
         ctx.fill();
 
         // Text
@@ -2848,6 +2849,26 @@ function deseneazaResort(x1, y1, x2, y2, seg, ampl, lungRepaus) {
 // ────────────────────────────────────────────
 //  DESENARE VECTORI DE FORTA PE OBIECT
 // ────────────────────────────────────────────
+// Smoothing cache per obiect — previne flickering
+function _smoothVal(ob, key, target, alpha) {
+    if (!ob._dv) ob._dv = {};
+    const prev = ob._dv[key];
+    if (prev === undefined || !isFinite(prev)) { ob._dv[key] = target; return target; }
+    const v = prev + (target - prev) * alpha;
+    ob._dv[key] = v;
+    return v;
+}
+// Smoothing pt directie — hysteresis: schimba directia doar daca diferenta e semnificativa
+function _smoothDir(ob, key, dir) {
+    if (!ob._dv) ob._dv = {};
+    const prev = ob._dv[key];
+    if (prev === undefined || prev === 0) { ob._dv[key] = dir; return dir; }
+    // Schimba directia doar daca noua directie e consistenta
+    if (dir !== 0 && dir !== prev) { ob._dv[key] = dir; return dir; }
+    return prev;
+}
+const SM = 0.15; // smoothing alpha (0=lent, 1=instant)
+
 function deseneazaVectori(ob, idx) {
     // Obiectele foarte grele (platforme, ancore) nu afiseaza vectori de forta
     if (ob.masa >= 999) return;
@@ -2856,10 +2877,10 @@ function deseneazaVectori(ob, idx) {
     const { cx, cy } = centruOb(ob);
     const bz = bazaOb(ob);
 
-    // Scala unica: 1N = sc pixeli lungime sageata
-    const sc = 0.5;
-    // Lungime minima sageata pentru vizibilitate
-    const minLen = 8;
+    // Scala: 1N = sc pixeli lungime sageata — MARITA pentru vizibilitate
+    const sc = 1.8;
+    // Lungime minima sageata
+    const minLen = 18;
 
     function scaleForce(fx, fy) {
         const mag = Math.sqrt(fx * fx + fy * fy);
@@ -2871,59 +2892,84 @@ function deseneazaVectori(ob, idx) {
 
     // ═══ 1. GREUTATE (G) — centru masa, in jos ═══
     const G = m * g;
-    if (G > 0.1) {
-        const gLen = Math.max(minLen, G * sc);
-        sageata(cx, cy, cx, cy + gLen, COL.greutate, 'G', G);
+    const G_s = _smoothVal(ob, 'G', G, SM);
+    if (G_s > 0.1) {
+        const gLen = Math.max(minLen, G_s * sc);
+        sageata(cx, cy, cx, cy + gLen, COL.greutate, 'G', G_s);
     }
 
     // ═══ 2. NORMALA SOL (N) — de la baza obiectului, in sus ═══
     if (ob.peSol) {
         const Nground = ob._Nground !== undefined ? ob._Nground : G;
-        if (Nground > 0.1) {
-            const nLen = Math.max(minLen, Nground * sc);
-            sageata(cx, bz, cx, bz - nLen, COL.normala, 'N', Nground);
+        const N_s = _smoothVal(ob, 'N', Nground, SM);
+        if (N_s > 0.1) {
+            const nLen = Math.max(minLen, N_s * sc);
+            sageata(cx, bz, cx, bz - nLen, COL.normala, 'N', N_s);
         }
+    } else {
+        _smoothVal(ob, 'N', 0, SM * 2); // decay catre 0
     }
 
     // ═══ 3. FRECARE SOL (Ff) — de la baza, opusa miscarii ═══
     if (ob.peSol) {
         const Nground = ob._Nground !== undefined ? ob._Nground : G;
-        const Ff = ob.mu * Nground; // μ·N_real (not μ·mg)
-        if (Ff > 0.1) {
-            if (Math.abs(ob.vx) > 0.05) {
-                // Frecare kinetica — opusa vitezei
-                const fLen = Math.max(minLen, Ff * sc);
-                const dir = -Math.sign(ob.vx);
-                sageata(cx, bz, cx + dir * fLen, bz, COL.frecare, 'Ff', Ff);
-            } else if (Math.abs(ob.ax) > 0.01) {
-                // Frecare statica — opusa acceleratiei (tine obiectul pe loc)
-                const Fs = Math.min(Ff, Math.abs(m * ob.ax));
-                if (Fs > 0.1) {
-                    const fsLen = Math.max(minLen, Fs * sc);
-                    const dir = -Math.sign(ob.ax);
-                    sageata(cx, bz, cx + dir * fsLen, bz, COL.frecare, 'Fs', Fs);
-                }
+        const Ff_max = ob.mu * Nground;
+        let Ff_show = 0, Ff_dir = 0;
+        const absVx = Math.abs(ob.vx);
+        if (absVx > 0.5) {
+            // Frecare kinetica — obiectul se misca clar
+            Ff_show = Ff_max;
+            Ff_dir = -Math.sign(ob.vx);
+        } else if (absVx < 0.1) {
+            // Obiect in repaus — afiseaza frecare STATICA doar daca exista forta aplicata neta
+            // (adica daca ceva incearca sa-l miste dar frecarea il tine pe loc)
+            let fNetH = 0;
+            if (ob.Fapl && ob.Fapl > 0.1) {
+                const alphaRad = (ob.alfaApl || 0) * Math.PI / 180;
+                fNetH += ob.Fapl * Math.cos(alphaRad);
             }
+            if (ob.ax0) fNetH += m * ob.ax0;
+            // Adauga forte din conectori
+            conexiuni.forEach(conn => {
+                const f = fortaConector(conn, ob, idx);
+                fNetH += f.fx;
+            });
+            if (Math.abs(fNetH) > 0.5) {
+                Ff_show = Math.min(Ff_max, Math.abs(fNetH));
+                Ff_dir = -Math.sign(fNetH);
+            }
+            // Daca nu exista forta aplicata => nu afisa frecare (corpul sta pe loc, fara forta)
         }
+        const Ff_s = _smoothVal(ob, 'Ff', Ff_show, SM);
+        Ff_dir = _smoothDir(ob, 'Ff_dir', Ff_dir);
+        if (Ff_s > 0.5 && Ff_dir !== 0) {
+            const fLen = Math.max(minLen, Ff_s * sc);
+            const lbl = absVx > 0.5 ? 'Ff' : 'Fs';
+            sageata(cx, bz, cx + Ff_dir * fLen, bz, COL.frecare, lbl, Ff_s);
+        }
+    } else {
+        _smoothVal(ob, 'Ff', 0, SM * 2);
     }
 
     // ═══ 4. NORMALE + FRECARE DE CONTACT (alte obiecte) ═══
     if (ob._contacte && ob._contacte.length > 0) {
         ob._contacte.forEach((c, ci) => {
-            // Vectorii pornesc din centrul obiectului, nu din punctul de contact
-            // (asa se vede clar care obiect e afectat)
-            const offN = ci * 4; // mic offset pt a nu suprapune vectorii multipli
+            const offN = ci * 5;
 
-            // Normala de contact — din centru, in directia normalei
-            if (c.normalForce > 0.5) {
-                const nLen = Math.max(minLen, c.normalForce * sc * 0.4);
-                sageata(cx + offN, cy, cx + offN + c.nx * nLen, cy + c.ny * nLen, COL.normala, 'N', c.normalForce);
+            // Normala de contact — smoothed
+            const nKey = 'Nc' + ci;
+            const nF_s = _smoothVal(ob, nKey, c.normalForce, SM);
+            if (nF_s > 0.5) {
+                const nLen = Math.max(minLen, nF_s * sc * 0.5);
+                sageata(cx + offN, cy, cx + offN + c.nx * nLen, cy + c.ny * nLen, COL.normala, 'N', nF_s);
             }
 
-            // Frecare de contact — din centru, tangenta pe suprafata
-            if (c.frictionForce > 0.1) {
-                const fLen = Math.max(minLen, c.frictionForce * sc * 0.4);
-                sageata(cx, cy + offN, cx + c.ftx * fLen, cy + offN + c.fty * fLen, COL.frecare, 'Ff', c.frictionForce);
+            // Frecare de contact — smoothed
+            const fKey = 'Fc' + ci;
+            const fF_s = _smoothVal(ob, fKey, c.frictionForce, SM);
+            if (fF_s > 0.3) {
+                const fLen = Math.max(minLen, fF_s * sc * 0.5);
+                sageata(cx, cy + offN, cx + c.ftx * fLen, cy + offN + c.fty * fLen, COL.frecare, 'Ff', fF_s);
             }
         });
     }
@@ -2936,33 +2982,57 @@ function deseneazaVectori(ob, idx) {
         const fdx = -dragCoeff * ob.vx;
         const fdy = -dragCoeff * ob.vy;
         const fdMag = Math.sqrt(fdx * fdx + fdy * fdy);
-        if (fdMag > 0.5) {
-            const f = scaleForce(fdx, fdy);
-            if (f) sageata(cx, cy, cx + f.dx, cy + f.dy, COL.drag, 'Fd', f.mag);
+        const fd_s = _smoothVal(ob, 'Fd', fdMag, SM);
+        if (fd_s > 0.5 && vMag > 1) {
+            const fdLen = Math.max(minLen, fd_s * sc);
+            const vnx = -ob.vx / vMag, vny = -ob.vy / vMag;
+            sageata(cx, cy, cx + vnx * fdLen, cy + vny * fdLen, COL.drag, 'Fd', fd_s);
         }
+    } else {
+        _smoothVal(ob, 'Fd', 0, SM * 2);
     }
 
     // ═══ 6. FORTA APLICATA (F) — definita de utilizator ═══
     if (ob.Fapl && ob.Fapl > 0.1) {
         const alphaRad = (ob.alfaApl || 0) * Math.PI / 180;
-        const fax = ob.Fapl * Math.cos(alphaRad);
-        const fay = -ob.Fapl * Math.sin(alphaRad);
+        const fax = Math.cos(alphaRad);
+        const fay = -Math.sin(alphaRad);
         const faLen = Math.max(minLen, ob.Fapl * sc);
-        const faNorm = Math.sqrt(fax * fax + fay * fay);
-        if (faNorm > 0.1) {
-            sageata(cx, cy, cx + (fax / faNorm) * faLen, cy + (fay / faNorm) * faLen, '#fbbf24', 'F', ob.Fapl);
-        }
+        sageata(cx, cy, cx + fax * faLen, cy + fay * faLen, '#fbbf24', 'F', ob.Fapl);
     }
 
     // ═══ 7. TENSIUNE / ELASTICA din conectori ═══
-    conexiuni.forEach(conn => {
+    conexiuni.forEach((conn, ci) => {
         const f = fortaConector(conn, ob, idx);
         const fMag = Math.sqrt(f.fx * f.fx + f.fy * f.fy);
-        if (fMag > 0.3) {
+        // Pt scripete/sfoara, tensiunea vine din constraint, nu din fortaConector
+        // Afisam tensiunea salvata de constraint solver
+        let tMag = fMag;
+        if ((conn.tip === 'sfoara' || conn.tip === 'scripete') && conn._tensiune > 0) {
+            tMag = conn._tensiune;
+        }
+        const tKey = 'T' + ci;
+        const t_s = _smoothVal(ob, tKey, tMag, SM);
+        if (t_s > 0.3) {
             const col = (conn.tip === 'sfoara' || conn.tip === 'scripete') ? COL.tensiune : COL.elastica;
             const label = (conn.tip === 'sfoara' || conn.tip === 'scripete') ? 'T' : 'Fe';
-            const fsc = Math.min(sc * 0.15, 40 / fMag);
-            sageata(cx, cy, cx + f.fx * fsc, cy + f.fy * fsc, col, label, fMag);
+            // Directia: catre celalalt obiect (sau catre scripete)
+            let altIdx = conn.idxA === idx ? conn.idxB : conn.idxA;
+            const alt = obiecte[altIdx];
+            if (alt) {
+                let tx, ty;
+                if (conn.tip === 'scripete') {
+                    tx = conn.px - cx; ty = conn.py - cy;
+                } else {
+                    const ca = centruOb(alt);
+                    tx = ca.cx - cx; ty = ca.cy - cy;
+                }
+                const tDist = Math.sqrt(tx * tx + ty * ty);
+                if (tDist > 1) {
+                    const tLen = Math.max(minLen, t_s * sc * 0.25);
+                    sageata(cx, cy, cx + (tx / tDist) * tLen, cy + (ty / tDist) * tLen, col, label, t_s);
+                }
+            }
         }
     });
 
@@ -3975,7 +4045,7 @@ function laInceput() {
     document.getElementById('btnPlay').classList.remove('active');
     sim.timp = 0;
     ist = [];
-    obiecte.forEach(ob => { ob.vx = 0; ob.vy = 0; ob.ax = 0; ob.ay = 0; ob.omega = 0; });
+    obiecte.forEach(ob => { ob.vx = 0; ob.vy = 0; ob.ax = 0; ob.ay = 0; ob.omega = 0; ob._dv = {}; });
     // Deblocheaza lungimea conectorilor
     conexiuni.forEach(conn => { conn.lungimeFixata = false; });
     salveazaStare();
@@ -5539,6 +5609,606 @@ const PROBLEME = [
         obiecte.push(_mkOb({ tip: 'sfera', x: cx, y: 60, raza: p.raza, masa: p.m, mu: 0, culoare: '#38bdf8' }));
         graficeActive = new Set(['v_t', 'y_t', 'G_t', 'Ec_t']);
         sim.sel = 0; selecteazaObiect(0);
+      }
+    },
+    // ══════════════════════════════════════════
+    //  TIPURI NOI — acoperire variante examen
+    // ══════════════════════════════════════════
+    { id: 'plan_inclinat_scripete', icon: '🔄', titlu: 'Plan inclinat cu scripete',
+      desc: 'Corp pe plan inclinat legat prin fir de un corp suspendat, peste un scripete ideal (V4, V6, V10, V14, V18).',
+      params: [
+        { id: 'm1', label: 'Masa m₁ (pe plan)', unit: 'kg', val: 3, min: 0.1, max: 500, step: 0.1 },
+        { id: 'm2', label: 'Masa m₂ (suspendat)', unit: 'kg', val: 2, min: 0.1, max: 500, step: 0.1 },
+        { id: 'theta', label: 'Unghi plan α', unit: '°', val: 30, min: 0, max: 85, step: 1 },
+        { id: 'mu', label: 'Coef. frecare μ', unit: '', val: 0, min: 0, max: 2, step: 0.01 },
+        { id: 'F_ext', label: 'Forta ext. pe m₂ (in jos)', unit: 'N', val: 0, min: 0, max: 1000, step: 1 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m1 = p.m1, m2 = p.m2, th = p.theta * Math.PI / 180, mu = p.mu;
+        const G1 = m1 * g, G2 = m2 * g;
+        const G1par = G1 * Math.sin(th), G1perp = G1 * Math.cos(th);
+        const N1 = G1perp;
+        const Ff1 = mu * N1;
+        const F_ext = p.F_ext || 0;
+        // m2 coboara: a = (m2*g + F_ext - m1*g*sin(α) - μ*m1*g*cos(α)) / (m1+m2)
+        const Fnet = G2 + F_ext - G1par - Ff1;
+        const a = Fnet / (m1 + m2);
+        const T = m2 * (g - a) + F_ext; // T = m2*(g-a) daca F_ext pe m2
+        const T_alt = m1 * a + G1par + Ff1; // verificare: T din perspectiva m1
+        return {
+          pasi: [
+            `<b>Date:</b> m₁=${m1}kg (plan α=${p.theta}°), m₂=${m2}kg (suspendat), μ=${mu}, g=${g}m/s²` + (F_ext > 0 ? `, F_ext=${F_ext}N` : ''),
+            `<b>G₁∥</b> = m₁g·sin(α) = ${m1}·${g}·sin(${p.theta}°) = <b>${G1par.toFixed(2)} N</b>`,
+            `<b>G₁⊥</b> = m₁g·cos(α) = <b>${G1perp.toFixed(2)} N</b>`,
+            `<b>N₁</b> = G₁⊥ = <b>${N1.toFixed(2)} N</b>`,
+            `<b>Ff</b> = μ·N₁ = ${mu}·${N1.toFixed(2)} = <b>${Ff1.toFixed(2)} N</b>`,
+            `<b>a</b> = (m₂g${F_ext>0?' + F':''}  − m₁g·sin(α) − μm₁g·cos(α)) / (m₁+m₂) = <b>${a.toFixed(3)} m/s²</b>`,
+            `<b>T</b> = m₁·(a + g·sin(α) + μg·cos(α)) = <b>${T_alt.toFixed(2)} N</b>`,
+            a > 0 ? `m₂ coboara, m₁ urca pe plan.` : a < 0 ? `m₁ coboara pe plan, m₂ urca.` : `Sistemul e in echilibru.`
+          ],
+          vals: { G1par, G1perp, N: N1, Ff: Ff1, a, T: T_alt }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('__reset');
+        const sol = nivelSol(), S = v => Math.round(v / 40) * 40, cx = S(W() / 2), gY = sol - 40;
+        obiecte.push(_mkOb({ tip: 'bloc', x: cx - 480, y: gY, w: 960, h: 40, masa: 999, ancorat: true, mu: p.mu, culoare: '#4b5563' }));
+        const rH = 240, rW = Math.max(120, Math.round(rH / Math.tan(Math.max(0.1, p.theta * Math.PI / 180))));
+        obiecte.push(_mkOb({ tip: 'triunghi', subtip: 'rampa-dr', x: S(cx - rW / 2 - 80), y: gY - rH, w: rW, h: rH, masa: 999, ancorat: true, mu: p.mu, culoare: '#4b5563' }));
+        const topY = gY - rH - 40;
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - rW / 2 - 80), y: topY, w: rW + 160, h: 20, masa: 999, ancorat: true, culoare: '#374151' }));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - rW / 4 - 80), y: S(gY - rH * 0.55), w: 40, h: 40, masa: p.m1, mu: p.mu, culoare: '#e63946' }));
+        const bw2 = Math.max(25, Math.min(60, p.m2 * 3));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx + rW / 2), y: S(topY + 100), w: bw2, h: bw2, masa: p.m2, mu: 0, culoare: '#38bdf8' }));
+        const pivotX = S(cx - rW / 2 - 80) + rW + 80, pivotY = topY + 10;
+        const c3 = centruOb(obiecte[3]), c4 = centruOb(obiecte[4]);
+        const dA = Math.sqrt((pivotX - c3.cx) ** 2 + (pivotY - c3.cy) ** 2);
+        const dB = Math.sqrt((pivotX - c4.cx) ** 2 + (pivotY - c4.cy) ** 2);
+        conexiuni.push({ tip: 'scripete', idxA: 3, idxB: 4, px: pivotX, py: pivotY, orientare: 'stanga', lungime: dA + dB, lungimeFixata: false, k: 200, culoare: '#a78bfa' });
+        graficeActive = new Set(['v_t', 'a_t', 'Ec_t', 'Ep_t']);
+      }
+    },
+    { id: 'ridicare_scripete', icon: '🏗️', titlu: 'Ridicare cu scripete / cablu',
+      desc: 'Corp ridicat prin cablu/fir peste scripete ideal, cu forta constanta aplicata de muncitor (V17, V26).',
+      params: [
+        { id: 'm', label: 'Masa corp m', unit: 'kg', val: 80, min: 0.1, max: 5000, step: 0.1 },
+        { id: 'F', label: 'Forta in cablu F', unit: 'N', val: 900, min: 0, max: 50000, step: 1 },
+        { id: 'tip_s', label: 'Tip scripete (1=fix, 2=mobil)', unit: '', val: 1, min: 1, max: 2, step: 1 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m = p.m, F = p.F, tip_s = p.tip_s;
+        const G = m * g;
+        const avMech = tip_s; // avantaj mecanic
+        const F_eff = F * avMech; // forta efectiva pe corp
+        const a = (F_eff - G) / m;
+        const N_sol = Math.max(0, G - F_eff); // normala sol daca e pe sol
+        const a_max_ridica = (F_eff) / m - g; // acceleratia la ridicare
+        const F_min = G / avMech;
+        return {
+          pasi: [
+            `<b>Date:</b> m=${m}kg, F=${F}N, scripete ${tip_s === 1 ? 'fix' : 'mobil'}, g=${g}m/s²`,
+            `<b>Greutate:</b> G = m·g = ${m}·${g} = <b>${G.toFixed(2)} N</b>`,
+            tip_s === 2 ? `<b>Scripete mobil:</b> F_eff = 2·F = 2·${F} = <b>${F_eff.toFixed(2)} N</b>` :
+                          `<b>Scripete fix:</b> F_eff = F = <b>${F_eff.toFixed(2)} N</b>`,
+            F_eff >= G
+              ? `<b>F_eff > G →</b> Corpul se ridica. a = (F_eff − G)/m = (${F_eff.toFixed(2)} − ${G.toFixed(2)})/${m} = <b>${a.toFixed(3)} m/s²</b>`
+              : `<b>F_eff < G →</b> Corpul NU se ridica. N_sol = G − F_eff = <b>${N_sol.toFixed(2)} N</b>`,
+            `<b>Forta minima pt ridicare:</b> F_min = G${tip_s===2?'/2':''} = <b>${F_min.toFixed(2)} N</b>`,
+            `<b>Tensiune cablu:</b> T = F = <b>${F.toFixed(2)} N</b>`
+          ],
+          vals: { G, F_eff, a: Math.max(0, a), N_sol, F_min, T: F }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('__reset');
+        const sol = nivelSol(), S = v => Math.round(v / 40) * 40, cx = S(W() / 2), gY = sol - 40;
+        obiecte.push(_mkOb({ tip: 'bloc', x: cx - 480, y: gY, w: 960, h: 40, masa: 999, ancorat: true, culoare: '#4b5563' }));
+        const topY = S(gY - 400);
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - 60), y: topY, w: 120, h: 20, masa: 999, ancorat: true, culoare: '#374151' }));
+        const bw = Math.max(30, Math.min(80, Math.sqrt(p.m) * 5));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - bw / 2 + 40), y: S(gY - bw - 10), w: bw, h: bw, masa: p.m, mu: 0.01, culoare: '#e63946' }));
+        const pivotX = cx, pivotY = topY + 10;
+        const c2 = centruOb(obiecte[2]);
+        const dB = Math.sqrt((pivotX - c2.cx) ** 2 + (pivotY - c2.cy) ** 2);
+        obiecte.push(_mkOb({ tip: 'sfera', x: S(cx - 80), y: S(gY - 80), raza: 15, masa: 0.5, Fapl: p.F, alfaApl: 90, culoare: '#38bdf8' }));
+        const c3 = centruOb(obiecte[3]);
+        const dA = Math.sqrt((pivotX - c3.cx) ** 2 + (pivotY - c3.cy) ** 2);
+        conexiuni.push({ tip: 'scripete', idxA: 3, idxB: 2, px: pivotX, py: pivotY, orientare: 'stanga', lungime: dA + dB, lungimeFixata: false, k: 200, culoare: '#a78bfa' });
+        graficeActive = new Set(['v_t', 'y_t', 'a_t', 'Ec_t']);
+      }
+    },
+    { id: 'doua_forte', icon: '⚡', titlu: 'Corp cu doua forte concurente',
+      desc: 'Corp pe suprafata orizontala actionat de doua forte la unghiuri diferite, cu frecare (V7, V12, V15).',
+      params: [
+        { id: 'm', label: 'Masa m', unit: 'kg', val: 2, min: 0.1, max: 500, step: 0.1 },
+        { id: 'F1', label: 'Forta F₁', unit: 'N', val: 7, min: 0, max: 1000, step: 0.1 },
+        { id: 'alpha1', label: 'Unghi F₁ fata de orizontala', unit: '°', val: 0, min: -90, max: 90, step: 1 },
+        { id: 'F2', label: 'Forta F₂', unit: 'N', val: 10, min: 0, max: 1000, step: 0.1 },
+        { id: 'alpha2', label: 'Unghi F₂ fata de orizontala', unit: '°', val: 60, min: -90, max: 90, step: 1 },
+        { id: 'mu', label: 'Coef. frecare μ', unit: '', val: 0, min: 0, max: 2, step: 0.01 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m = p.m, mu = p.mu;
+        const a1 = p.alpha1 * Math.PI / 180, a2 = p.alpha2 * Math.PI / 180;
+        const Fx1 = p.F1 * Math.cos(a1), Fy1 = p.F1 * Math.sin(a1);
+        const Fx2 = p.F2 * Math.cos(a2), Fy2 = p.F2 * Math.sin(a2);
+        const Rx = Fx1 + Fx2, Ry = Fy1 + Fy2;
+        const R = Math.sqrt(Rx * Rx + Ry * Ry);
+        const alphaR = Math.atan2(Ry, Rx) * 180 / Math.PI;
+        const N = Math.max(0, m * g - Ry);
+        const Ff = mu * N;
+        const Fnet_x = Rx - (Rx > 0 ? Ff : -Ff);
+        const a_x = Fnet_x / m;
+        return {
+          pasi: [
+            `<b>Date:</b> m=${m}kg, F₁=${p.F1}N (α₁=${p.alpha1}°), F₂=${p.F2}N (α₂=${p.alpha2}°), μ=${mu}`,
+            `<b>Componente F₁:</b> F₁x = ${Fx1.toFixed(2)}N, F₁y = ${Fy1.toFixed(2)}N`,
+            `<b>Componente F₂:</b> F₂x = ${Fx2.toFixed(2)}N, F₂y = ${Fy2.toFixed(2)}N`,
+            `<b>Rezultanta:</b> R = √(Rx²+Ry²) = √(${Rx.toFixed(2)}²+${Ry.toFixed(2)}²) = <b>${R.toFixed(2)} N</b> la ${alphaR.toFixed(1)}°`,
+            `<b>Normala:</b> N = m·g − ΣFy = ${m}·${g} − ${Ry.toFixed(2)} = <b>${N.toFixed(2)} N</b>`,
+            mu > 0 ? `<b>Frecare:</b> Ff = μ·N = ${mu}·${N.toFixed(2)} = <b>${Ff.toFixed(2)} N</b>` : '',
+            `<b>Acceleratia:</b> a = (ΣFx − Ff)/m = (${Rx.toFixed(2)} − ${Ff.toFixed(2)})/${m} = <b>${a_x.toFixed(3)} m/s²</b>`,
+            N <= 0 ? `⚠️ Normala ≤ 0 — corpul se ridica de pe suprafata!` : ''
+          ].filter(s => s),
+          vals: { R, alphaR, N, Ff, a: a_x, Rx, Ry }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('__reset');
+        const sol = nivelSol(), S = v => Math.round(v / 40) * 40, cx = S(W() / 2), gY = sol - 40;
+        obiecte.push(_mkOb({ tip: 'bloc', x: cx - 480, y: gY, w: 960, h: 40, masa: 999, ancorat: true, mu: p.mu, culoare: '#4b5563' }));
+        const bw = Math.max(30, Math.min(80, p.m * 3));
+        // Calculam rezultanta
+        const a1 = p.alpha1 * Math.PI / 180, a2 = p.alpha2 * Math.PI / 180;
+        const Rx = p.F1 * Math.cos(a1) + p.F2 * Math.cos(a2);
+        const Ry = p.F1 * Math.sin(a1) + p.F2 * Math.sin(a2);
+        const R = Math.sqrt(Rx * Rx + Ry * Ry);
+        const alphaR = Math.atan2(Ry, Rx) * 180 / Math.PI;
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - bw / 2), y: gY - bw, w: bw, h: bw,
+            masa: p.m, mu: p.mu, Fapl: R, alfaApl: alphaR, culoare: '#38bdf8' }));
+        graficeActive = new Set(['v_t', 'a_t', 'Ff_t', 'N_t', 'Fnet_t']);
+        sim.sel = 1; selecteazaObiect(1);
+      }
+    },
+    { id: 'plan_inclinat_forta', icon: '🎿', titlu: 'Plan inclinat + forta la unghi',
+      desc: 'Corp pe plan inclinat cu forta aplicata la unghi arbitrar (orizontala, paralela cu planul etc.) (V3, V9, V13, V32).',
+      params: [
+        { id: 'm', label: 'Masa m', unit: 'kg', val: 2, min: 0.1, max: 5000, step: 0.1 },
+        { id: 'theta', label: 'Unghi plan α', unit: '°', val: 30, min: 5, max: 85, step: 1 },
+        { id: 'mu', label: 'Coef. frecare μ', unit: '', val: 0.2, min: 0, max: 2, step: 0.01 },
+        { id: 'F', label: 'Forta F', unit: 'N', val: 20, min: 0, max: 50000, step: 1 },
+        { id: 'beta', label: 'Unghi F fata de plan (0=paralel plan, 90=normal)', unit: '°', val: 0, min: -90, max: 90, step: 1 },
+        { id: 'dir', label: 'Directie (1=in sus pe plan, -1=in jos)', unit: '', val: 1, min: -1, max: 1, step: 2 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m = p.m, th = p.theta * Math.PI / 180, mu = p.mu;
+        const F = p.F, beta = p.beta * Math.PI / 180, dir = p.dir;
+        const G = m * g;
+        const Gpar = G * Math.sin(th);
+        const Gperp = G * Math.cos(th);
+        // F descompusa pe plan: componenta paralela si normala la plan
+        const Fpar = F * Math.cos(beta) * dir; // + = in sus pe plan
+        const Fperp = F * Math.sin(beta); // + = inspre plan (mareste N)
+        const N = Gperp + Fperp;
+        const Ff = mu * Math.max(0, N);
+        // Miscare in sus: Fpar - Gpar - Ff
+        // Miscare in jos: Gpar - Fpar - Ff (daca aluneca in jos)
+        // General: Fnet = Fpar - Gpar - Ff * sign(viteza)
+        // Presupunem ca forta incearca sa urce: daca Fpar > 0
+        const Fnet_sus = Fpar - Gpar - Ff;
+        const Fnet_jos = -Fpar + Gpar - Ff; // daca corpul ar coborî
+        const a_sus = Fnet_sus / m;
+        const a_jos = Fnet_jos / m;
+        const miscare = Fpar >= 0
+          ? (Fnet_sus > 0 ? 'urca' : (Gpar > Ff + Fpar ? 'coboara' : 'echilibru'))
+          : (Fnet_jos > 0 ? 'coboara' : 'echilibru');
+        const a_final = miscare === 'urca' ? a_sus : miscare === 'coboara' ? a_jos : 0;
+        return {
+          pasi: [
+            `<b>Date:</b> m=${m}kg, α=${p.theta}°, F=${F}N (β=${p.beta}° fata de plan, ${dir>0?'in sus':'in jos'}), μ=${mu}`,
+            `<b>G∥</b> = mg·sin(α) = <b>${Gpar.toFixed(2)} N</b>`,
+            `<b>G⊥</b> = mg·cos(α) = <b>${Gperp.toFixed(2)} N</b>`,
+            `<b>F∥</b> = F·cos(β)${dir>0?' (in sus)':' (in jos)'} = <b>${Fpar.toFixed(2)} N</b>`,
+            `<b>F⊥</b> = F·sin(β) = <b>${(F * Math.sin(beta)).toFixed(2)} N</b>`,
+            `<b>N</b> = G⊥ + F⊥ = ${Gperp.toFixed(2)} + ${(Fperp).toFixed(2)} = <b>${N.toFixed(2)} N</b>`,
+            N < 0 ? `⚠️ N < 0 — corpul se desprinde de plan!` : '',
+            `<b>Ff</b> = μ·N = ${mu}·${Math.max(0,N).toFixed(2)} = <b>${Ff.toFixed(2)} N</b>`,
+            `<b>Fnet</b> = ${miscare === 'urca' ? `F∥ − G∥ − Ff = ${Fpar.toFixed(2)} − ${Gpar.toFixed(2)} − ${Ff.toFixed(2)}` : `G∥ − F∥ − Ff = ${Gpar.toFixed(2)} − ${Math.abs(Fpar).toFixed(2)} − ${Ff.toFixed(2)}`} = <b>${(m*a_final).toFixed(2)} N</b>`,
+            `<b>a</b> = Fnet/m = <b>${a_final.toFixed(3)} m/s²</b>`,
+            miscare === 'urca' ? `Corpul urca pe plan.` : miscare === 'coboara' ? `Corpul coboara pe plan.` : `Corpul e in echilibru pe plan.`
+          ].filter(s => s),
+          vals: { Gpar, Gperp, N, Ff, a: a_final, Fpar, Fperp }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('plan_inclinat');
+        if (obiecte[3]) {
+          obiecte[3].masa = p.m;
+          obiecte[3].mu = p.mu;
+          if (p.F > 0) {
+            // Convertim forta relativa la plan in forta globala
+            const th = p.theta * Math.PI / 180;
+            const beta = p.beta * Math.PI / 180;
+            const dir = p.dir;
+            // Directia fortei in coordonate globale
+            const angleGlobal = (Math.PI / 2 - th) + beta * dir;
+            obiecte[3].Fapl = p.F;
+            obiecte[3].alfaApl = angleGlobal * 180 / Math.PI;
+          }
+        }
+        if (obiecte[2]) obiecte[2].mu = p.mu;
+        graficeActive = new Set(['v_t', 'N_t', 'Ff_t', 'G_t', 'a_t']);
+        sim.sel = 3; selecteazaObiect(3);
+      }
+    },
+    { id: 'resort_vertical', icon: '🔩', titlu: 'Resort vertical / suspendat',
+      desc: 'Sistem cu resort vertical — corp suspendat sau discuri cu resort intre ele (V19, V24, V25, V31).',
+      params: [
+        { id: 'm1', label: 'Masa m₁ (sus)', unit: 'kg', val: 0.1, min: 0.01, max: 100, step: 0.01 },
+        { id: 'm2', label: 'Masa m₂ (jos)', unit: 'kg', val: 0.3, min: 0.01, max: 100, step: 0.01 },
+        { id: 'k', label: 'Constanta resort k', unit: 'N/m', val: 20, min: 0.1, max: 1000, step: 0.1 },
+        { id: 'l0', label: 'Lungime nedeformata l₀', unit: 'cm', val: 40, min: 1, max: 200, step: 1 },
+        { id: 'config', label: 'Config (1=suspendat, 2=pe masa)', unit: '', val: 1, min: 1, max: 2, step: 1 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m1 = p.m1, m2 = p.m2, k = p.k, l0 = p.l0 / 100; // in metri
+        const G1 = m1 * g, G2 = m2 * g;
+        if (p.config === 1) {
+          // Suspendat: resort sus, m1 jos (sau ambele mase suspendate)
+          const dl_total = (m1 + m2) * g / k;
+          const l_total = l0 + dl_total;
+          const F_resort = k * dl_total;
+          const N_m2 = 0; // suspendat, nu e pe masa
+          const T_period = 2 * Math.PI * Math.sqrt((m1 + m2) / k);
+          return {
+            pasi: [
+              `<b>Date:</b> m₁=${m1}kg, m₂=${m2}kg, k=${k}N/m, l₀=${p.l0}cm, suspendat`,
+              `<b>G₁</b> = m₁·g = <b>${G1.toFixed(2)} N</b>`,
+              `<b>G₂</b> = m₂·g = <b>${G2.toFixed(2)} N</b>`,
+              `<b>Alungire:</b> Δl = (m₁+m₂)·g/k = ${(m1+m2).toFixed(2)}·${g}/${k} = <b>${(dl_total*100).toFixed(2)} cm</b>`,
+              `<b>Lungime resort:</b> l = l₀ + Δl = ${p.l0} + ${(dl_total*100).toFixed(2)} = <b>${(l_total*100).toFixed(2)} cm</b>`,
+              `<b>Forta elastica:</b> F = k·Δl = <b>${F_resort.toFixed(2)} N</b>`,
+              `<b>Perioada oscilatie:</b> T = 2π√((m₁+m₂)/k) = <b>${T_period.toFixed(3)} s</b>`
+            ],
+            vals: { dl: dl_total, l: l_total, F_resort, T: T_period }
+          };
+        } else {
+          // Pe masa: m2 pe masa, resort deasupra, m1 deasupra resortului
+          const dl_compresie = m1 * g / k;
+          const l_comp = l0 - dl_compresie;
+          const N_m2 = (m1 + m2) * g;
+          const F_resort = k * dl_compresie;
+          return {
+            pasi: [
+              `<b>Date:</b> m₁=${m1}kg (sus), m₂=${m2}kg (jos pe masa), k=${k}N/m, l₀=${p.l0}cm`,
+              `<b>G₁</b> = m₁·g = <b>${G1.toFixed(2)} N</b>`,
+              `<b>G₂</b> = m₂·g = <b>${G2.toFixed(2)} N</b>`,
+              `<b>Compresie resort:</b> Δl = m₁·g/k = ${m1}·${g}/${k} = <b>${(dl_compresie*100).toFixed(2)} cm</b>`,
+              `<b>Lungime resort:</b> l = l₀ − Δl = ${p.l0} − ${(dl_compresie*100).toFixed(2)} = <b>${(l_comp*100).toFixed(2)} cm</b>`,
+              `<b>Forta elastica:</b> F = k·Δl = <b>${F_resort.toFixed(2)} N</b>`,
+              `<b>Normala pe m₂:</b> N = (m₁+m₂)·g = <b>${N_m2.toFixed(2)} N</b>`,
+              `<b>Normala pe m₁:</b> N₁ = F_resort = <b>${F_resort.toFixed(2)} N</b>`
+            ],
+            vals: { dl: dl_compresie, l: l_comp, F_resort, N_m2 }
+          };
+        }
+      },
+      construieste(p) {
+        incarcaExperiment('resort');
+        if (obiecte[2]) { obiecte[2].masa = p.m1 + p.m2; }
+        if (conexiuni[0]) { conexiuni[0].k = p.k; }
+        graficeActive = new Set(['y_t', 'v_t', 'Ec_t', 'Ep_t', 'Em_t']);
+      }
+    },
+    { id: 'sistem_3_corpuri', icon: '🔗', titlu: 'Sistem 3 corpuri cu scripete',
+      desc: 'Corp A pe orizontala, B si C suspendate/pe planuri, legate cu fire peste scripete (V21, V28).',
+      params: [
+        { id: 'm1', label: 'Masa A (orizontala)', unit: 'kg', val: 1, min: 0.1, max: 500, step: 0.1 },
+        { id: 'm2', label: 'Masa B (suspendat/inclinat)', unit: 'kg', val: 5, min: 0.1, max: 500, step: 0.1 },
+        { id: 'm3', label: 'Masa C (suspendat/inclinat)', unit: 'kg', val: 2, min: 0.1, max: 500, step: 0.1 },
+        { id: 'mu', label: 'Coef. frecare μ (pe A)', unit: '', val: 0.2, min: 0, max: 2, step: 0.01 },
+        { id: 'theta_B', label: 'Unghi plan B (0=suspendat)', unit: '°', val: 0, min: 0, max: 85, step: 1 },
+        { id: 'theta_C', label: 'Unghi plan C (0=suspendat)', unit: '°', val: 0, min: 0, max: 85, step: 1 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m1 = p.m1, m2 = p.m2, m3 = p.m3, mu = p.mu;
+        const thB = p.theta_B * Math.PI / 180, thC = p.theta_C * Math.PI / 180;
+        // Forta neta pe B (tendinta sa coboare): m2*g*sin(thB) daca pe plan, m2*g daca suspendat
+        const FB = thB > 0.01 ? m2 * g * Math.sin(thB) : m2 * g;
+        // Forta neta pe C (tendinta sa coboare)
+        const FC = thC > 0.01 ? m3 * g * Math.sin(thC) : m3 * g;
+        // Frecare pe A
+        const Ff_A = mu * m1 * g;
+        // Presupunem B coboara, C urca => A se misca spre B
+        // F_net = FB - FC - Ff_A
+        const Fnet = FB - FC - Ff_A;
+        const a = Fnet / (m1 + m2 + m3);
+        // Tensiune in firul B-A: T_BA = FB - m2*a (sau m2*(g-a) daca suspendat)
+        const T_BA = thB > 0.01 ? m2 * g * Math.sin(thB) - m2 * a : m2 * (g - a);
+        // Tensiune in firul A-C: T_AC = FC + m3*a (sau m3*(g+a) daca suspendat si urca)
+        const T_AC = thC > 0.01 ? m3 * g * Math.sin(thC) + m3 * a : m3 * (g + a);
+        // Masa C minima pt viteza constanta (a=0)
+        const m3_echilibru = (FB - Ff_A) / (thC > 0.01 ? g * Math.sin(thC) : g);
+        return {
+          pasi: [
+            `<b>Date:</b> mA=${m1}kg (orizontala, μ=${mu}), mB=${m2}kg${thB>0.01?' (plan '+p.theta_B+'°)':' (suspendat)'}, mC=${m3}kg${thC>0.01?' (plan '+p.theta_C+'°)':' (suspendat)'}`,
+            `<b>Forta motoare B:</b> FB = ${thB>0.01 ? `m₂g·sin(${p.theta_B}°)` : 'm₂·g'} = <b>${FB.toFixed(2)} N</b>`,
+            `<b>Forta rezistenta C:</b> FC = ${thC>0.01 ? `m₃g·sin(${p.theta_C}°)` : 'm₃·g'} = <b>${FC.toFixed(2)} N</b>`,
+            `<b>Frecare pe A:</b> Ff = μ·mA·g = ${mu}·${m1}·${g} = <b>${Ff_A.toFixed(2)} N</b>`,
+            `<b>Acceleratia:</b> a = (FB − FC − Ff)/(mA+mB+mC) = (${FB.toFixed(2)} − ${FC.toFixed(2)} − ${Ff_A.toFixed(2)})/${(m1+m2+m3).toFixed(1)} = <b>${a.toFixed(3)} m/s²</b>`,
+            `<b>Tensiune fir B–A:</b> T₁ = <b>${T_BA.toFixed(2)} N</b>`,
+            `<b>Tensiune fir A–C:</b> T₂ = <b>${T_AC.toFixed(2)} N</b>`,
+            m3_echilibru > 0 ? `<b>mC pt echilibru (a=0):</b> <b>${m3_echilibru.toFixed(2)} kg</b>` : '',
+            a > 0 ? `B coboara/aluneca, C urca, A se misca spre B.` : a < 0 ? `C coboara, B urca, A se misca spre C.` : `Sistem in echilibru.`
+          ].filter(s => s),
+          vals: { a, T_BA, T_AC, Ff_A, FB, FC, m3_echilibru: Math.max(0, m3_echilibru) }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('__reset');
+        const sol = nivelSol(), S = v => Math.round(v / 40) * 40, cx = S(W() / 2), gY = sol - 40;
+        obiecte.push(_mkOb({ tip: 'bloc', x: cx - 480, y: gY, w: 960, h: 40, masa: 999, ancorat: true, mu: p.mu, culoare: '#4b5563' }));
+        // Bara suport
+        const topY = S(gY - 360);
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - 240), y: topY, w: 480, h: 20, masa: 999, ancorat: true, culoare: '#374151' }));
+        // Stalpi
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - 240), y: topY + 20, w: 16, h: 100, masa: 999, ancorat: true, culoare: '#4b5563' }));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx + 224), y: topY + 20, w: 16, h: 100, masa: 999, ancorat: true, culoare: '#4b5563' }));
+        // Corp A pe orizontala (idx 4)
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - 25), y: gY - 50, w: 50, h: 50, masa: p.m1, mu: p.mu, culoare: '#fbbf24' }));
+        // Corp B suspendat stanga (idx 5)
+        const bwB = Math.max(25, Math.min(60, p.m2 * 3));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - 200), y: S(topY + 160), w: bwB, h: bwB, masa: p.m2, mu: 0, culoare: '#e63946' }));
+        // Corp C suspendat dreapta (idx 6)
+        const bwC = Math.max(25, Math.min(60, p.m3 * 3));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx + 200), y: S(topY + 200), w: bwC, h: bwC, masa: p.m3, mu: 0, culoare: '#38bdf8' }));
+        // Scripete stanga: B -> A
+        const pxL = S(cx - 200), pyL = topY + 10;
+        const cA = centruOb(obiecte[4]), cB = centruOb(obiecte[5]);
+        const dAL = Math.sqrt((pxL - cA.cx) ** 2 + (pyL - cA.cy) ** 2);
+        const dBL = Math.sqrt((pxL - cB.cx) ** 2 + (pyL - cB.cy) ** 2);
+        conexiuni.push({ tip: 'scripete', idxA: 4, idxB: 5, px: pxL, py: pyL, orientare: 'stanga', lungime: dAL + dBL, lungimeFixata: false, k: 200, culoare: '#a78bfa' });
+        // Scripete dreapta: A -> C
+        const pxR = S(cx + 200), pyR = topY + 10;
+        const cC = centruOb(obiecte[6]);
+        const dAR = Math.sqrt((pxR - cA.cx) ** 2 + (pyR - cA.cy) ** 2);
+        const dCR = Math.sqrt((pxR - cC.cx) ** 2 + (pyR - cC.cy) ** 2);
+        conexiuni.push({ tip: 'scripete', idxA: 4, idxB: 6, px: pxR, py: pyR, orientare: 'dreapta', lungime: dAR + dCR, lungimeFixata: false, k: 200, culoare: '#a78bfa' });
+        graficeActive = new Set(['v_t', 'a_t', 'Ec_t', 'Ep_t']);
+      }
+    },
+    { id: 'miscare_uniforma', icon: '📏', titlu: 'Miscare rectilinie uniforma',
+      desc: 'Corp in miscare rectilinie uniforma (a=0). Se determina coeficientul de frecare din echilibrul fortelor (V5, V22, V30).',
+      params: [
+        { id: 'm', label: 'Masa m', unit: 'kg', val: 2, min: 0.1, max: 5000, step: 0.1 },
+        { id: 'F', label: 'Forta aplicata F', unit: 'N', val: 8, min: 0, max: 50000, step: 0.1 },
+        { id: 'alpha', label: 'Unghi F fata de orizontala α', unit: '°', val: 30, min: -90, max: 90, step: 1 },
+        { id: 'v', label: 'Viteza constanta v', unit: 'm/s', val: 5, min: 0, max: 100, step: 0.1 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m = p.m, F = p.F, alpha = p.alpha * Math.PI / 180;
+        const Fx = F * Math.cos(alpha);
+        const Fy = F * Math.sin(alpha);
+        const N = m * g - Fy;
+        // Miscare uniforma => a = 0 => Ff = Fx
+        const Ff = Fx;
+        const mu = N > 0 ? Ff / N : 0;
+        const G = m * g;
+        return {
+          pasi: [
+            `<b>Date:</b> m=${m}kg, F=${F}N, α=${p.alpha}°, v=${p.v}m/s (constanta), g=${g}m/s²`,
+            `<b>Miscare uniforma ⟹ a = 0</b>, deci ΣF = 0`,
+            `<b>Componenta orizontala:</b> Fx = F·cos(α) = ${F}·cos(${p.alpha}°) = <b>${Fx.toFixed(2)} N</b>`,
+            `<b>Componenta verticala:</b> Fy = F·sin(α) = <b>${Fy.toFixed(2)} N</b>`,
+            `<b>Normala:</b> N = m·g − Fy = ${m}·${g} − ${Fy.toFixed(2)} = <b>${N.toFixed(2)} N</b>`,
+            `<b>Din ΣFx = 0:</b> Ff = Fx = <b>${Ff.toFixed(2)} N</b>`,
+            `<b>Coef. frecare:</b> μ = Ff/N = ${Ff.toFixed(2)}/${N.toFixed(2)} = <b>${mu.toFixed(4)}</b>`,
+            `<b>Distanta in t secunde:</b> d = v·t = ${p.v}·t`
+          ],
+          vals: { Fx, Fy, N, Ff, mu, G }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('__reset');
+        const sol = nivelSol(), S = v => Math.round(v / 40) * 40, cx = S(W() / 2), gY = sol - 40;
+        const mu_calc = (p.F * Math.cos(p.alpha * Math.PI / 180)) / (p.m * sim.g - p.F * Math.sin(p.alpha * Math.PI / 180));
+        obiecte.push(_mkOb({ tip: 'bloc', x: cx - 480, y: gY, w: 960, h: 40, masa: 999, ancorat: true, mu: Math.max(0, mu_calc), culoare: '#4b5563' }));
+        const bw = Math.max(30, Math.min(80, p.m * 3));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - 200), y: gY - bw, w: bw, h: bw,
+            masa: p.m, mu: Math.max(0, mu_calc), vx0: p.v * 50, Fapl: p.F, alfaApl: p.alpha, culoare: '#38bdf8' }));
+        graficeActive = new Set(['v_t', 'x_t', 'Ff_t', 'N_t']);
+        sim.sel = 1; selecteazaObiect(1);
+      }
+    },
+    { id: 'plan_inclinat_echilibru', icon: '⚖️', titlu: 'Echilibru pe plan inclinat',
+      desc: 'Corp mentinut in echilibru pe plan inclinat prin forta. Se determina conditiile de echilibru (V6, V9).',
+      params: [
+        { id: 'm', label: 'Masa m', unit: 'kg', val: 10, min: 0.1, max: 5000, step: 0.1 },
+        { id: 'theta', label: 'Unghi plan α', unit: '°', val: 30, min: 5, max: 85, step: 1 },
+        { id: 'F', label: 'Forta F (paralela cu planul, in sus)', unit: 'N', val: 50, min: 0, max: 50000, step: 1 },
+        { id: 'mu', label: 'Coef. frecare μ', unit: '', val: 0, min: 0, max: 2, step: 0.01 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m = p.m, th = p.theta * Math.PI / 180, mu = p.mu, F = p.F;
+        const G = m * g;
+        const Gpar = G * Math.sin(th);
+        const Gperp = G * Math.cos(th);
+        const N = Gperp;
+        const Ff = mu * N;
+        // Conditie echilibru: F = Gpar - Ff (daca fara frecare: F = Gpar)
+        const F_echilibru = Gpar - Ff;
+        const F_min = Math.max(0, Gpar - Ff); // min force to hold (with friction helping)
+        const F_max = Gpar + Ff; // max force before sliding up
+        // Unghi plan daca F dat
+        // F = m*g*sin(α) => α = arcsin(F/(mg))
+        const alpha_echilibru = F > 0 ? Math.asin(Math.min(1, F / (m * g))) * 180 / Math.PI : 0;
+        // Acceleratie daca se elibereaza
+        const a_liber = (Gpar - Ff) / m;
+        return {
+          pasi: [
+            `<b>Date:</b> m=${m}kg, α=${p.theta}°, F=${F}N (paralela, in sus), μ=${mu}`,
+            `<b>G∥</b> = mg·sin(α) = ${m}·${g}·sin(${p.theta}°) = <b>${Gpar.toFixed(2)} N</b>`,
+            `<b>G⊥</b> = mg·cos(α) = <b>${Gperp.toFixed(2)} N</b>`,
+            `<b>N</b> = G⊥ = <b>${N.toFixed(2)} N</b>`,
+            mu > 0 ? `<b>Ff</b> = μ·N = <b>${Ff.toFixed(2)} N</b>` : '',
+            `<b>Forta pt echilibru (fara frecare):</b> F = G∥ = <b>${Gpar.toFixed(2)} N</b>`,
+            mu > 0 ? `<b>F minim (frecarea ajuta):</b> F_min = G∥ − Ff = <b>${F_min.toFixed(2)} N</b>` : '',
+            mu > 0 ? `<b>F maxim (inainte sa urce):</b> F_max = G∥ + Ff = <b>${F_max.toFixed(2)} N</b>` : '',
+            `<b>Unghi pt echilibru cu F=${F}N (fara frecare):</b> α = arcsin(F/mg) = <b>${alpha_echilibru.toFixed(1)}°</b>`,
+            `<b>Daca se elimina F:</b> a = (G∥ − Ff)/m = <b>${a_liber.toFixed(3)} m/s²</b> in jos pe plan`
+          ].filter(s => s),
+          vals: { Gpar, N, Ff, F_echilibru, F_min, F_max, alpha_echilibru, a_liber }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('plan_inclinat');
+        if (obiecte[3]) {
+          obiecte[3].masa = p.m;
+          obiecte[3].mu = p.mu;
+          if (p.F > 0) { obiecte[3].Fapl = p.F; obiecte[3].alfaApl = 0; }
+        }
+        if (obiecte[2]) obiecte[2].mu = p.mu;
+        graficeActive = new Set(['v_t', 'N_t', 'Ff_t', 'G_t']);
+        sim.sel = 3; selecteazaObiect(3);
+      }
+    },
+    { id: 'corpuri_contact', icon: '📦', titlu: 'Doua corpuri in contact (impins)',
+      desc: 'Corp mare impinge corp mic pe suprafata orizontala — determinarea fortei de contact (V16, V27).',
+      params: [
+        { id: 'm1', label: 'Masa m₁ (impinge)', unit: 'kg', val: 3, min: 0.1, max: 500, step: 0.1 },
+        { id: 'm2', label: 'Masa m₂ (impins)', unit: 'kg', val: 1, min: 0.1, max: 500, step: 0.1 },
+        { id: 'F', label: 'Forta F pe m₁', unit: 'N', val: 144, min: 0, max: 10000, step: 1 },
+        { id: 'alpha', label: 'Unghi F fata de orizontala α', unit: '°', val: 60, min: -90, max: 90, step: 1 },
+        { id: 'mu', label: 'Coef. frecare μ', unit: '', val: 0.2, min: 0, max: 2, step: 0.01 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m1 = p.m1, m2 = p.m2, F = p.F, mu = p.mu;
+        const alpha = p.alpha * Math.PI / 180;
+        const Fx = F * Math.cos(alpha);
+        const Fy = F * Math.sin(alpha);
+        const M = m1 + m2;
+        // Normala totala
+        const N_total = M * g - Fy;
+        const Ff_total = mu * N_total;
+        const a = (Fx - Ff_total) / M;
+        // Forta de contact (F pe m2 de la m1)
+        const N2 = m2 * g; // normala pe m2 de la sol
+        const Ff2 = mu * N2;
+        const F_contact = m2 * a + Ff2;
+        // Normala pe m1
+        const N1 = m1 * g + (Fy > 0 ? 0 : -Fy); // daca F impinge in sus, reduce N1
+        return {
+          pasi: [
+            `<b>Date:</b> m₁=${m1}kg, m₂=${m2}kg, F=${F}N la α=${p.alpha}°, μ=${mu}`,
+            `<b>Fx</b> = F·cos(α) = <b>${Fx.toFixed(2)} N</b>`,
+            `<b>Fy</b> = F·sin(α) = <b>${Fy.toFixed(2)} N</b>`,
+            `<b>N total</b> = (m₁+m₂)g − Fy = <b>${N_total.toFixed(2)} N</b>`,
+            `<b>Ff total</b> = μ·N = <b>${Ff_total.toFixed(2)} N</b>`,
+            `<b>Acceleratia:</b> a = (Fx − Ff)/(m₁+m₂) = <b>${a.toFixed(3)} m/s²</b>`,
+            `<b>Forta de contact m₁→m₂:</b> F₁₂ = m₂·a + μ·m₂·g = <b>${F_contact.toFixed(2)} N</b>`,
+            `<b>Verificare:</b> F₁₂ = m₂·(a + μ·g) = ${m2}·(${a.toFixed(3)} + ${mu}·${g}) = <b>${(m2*(a+mu*g)).toFixed(2)} N</b>`
+          ],
+          vals: { a, Fx, Fy, N_total, Ff_total, F_contact }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('__reset');
+        const sol = nivelSol(), S = v => Math.round(v / 40) * 40, cx = S(W() / 2), gY = sol - 40;
+        obiecte.push(_mkOb({ tip: 'bloc', x: cx - 480, y: gY, w: 960, h: 40, masa: 999, ancorat: true, mu: p.mu, culoare: '#4b5563' }));
+        const bw1 = Math.max(40, Math.min(80, p.m1 * 4));
+        const bw2 = Math.max(30, Math.min(60, p.m2 * 4));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - bw1 - bw2 / 2), y: gY - bw1, w: bw1, h: bw1,
+            masa: p.m1, mu: p.mu, Fapl: p.F, alfaApl: p.alpha, culoare: '#e63946' }));
+        obiecte.push(_mkOb({ tip: 'bloc', x: S(cx - bw2 / 2 + 2), y: gY - bw2, w: bw2, h: bw2,
+            masa: p.m2, mu: p.mu, culoare: '#38bdf8' }));
+        graficeActive = new Set(['v_t', 'a_t', 'Fnet_t', 'N_t']);
+        sim.sel = 1; selecteazaObiect(1);
+      }
+    },
+    { id: 'dinamometru', icon: '🔬', titlu: 'Scripete + dinamometru',
+      desc: 'Doua mase suspendate peste scripete ideal, scripetele agatat de dinamometru sau tavan (V17, V18).',
+      params: [
+        { id: 'm1', label: 'Masa m₁', unit: 'kg', val: 1, min: 0.1, max: 500, step: 0.1 },
+        { id: 'm2', label: 'Masa m₂', unit: 'kg', val: 3, min: 0.1, max: 500, step: 0.1 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m1 = p.m1, m2 = p.m2;
+        const a = Math.abs(m1 - m2) * g / (m1 + m2);
+        const T = 2 * m1 * m2 * g / (m1 + m2);
+        const F_dinamometru = 2 * T; // forta pe ax scripete = 2*T
+        const G1 = m1 * g, G2 = m2 * g;
+        return {
+          pasi: [
+            `<b>Date:</b> m₁=${m1}kg, m₂=${m2}kg, g=${g}m/s²`,
+            `<b>G₁</b> = m₁·g = <b>${G1.toFixed(2)} N</b>`,
+            `<b>G₂</b> = m₂·g = <b>${G2.toFixed(2)} N</b>`,
+            `<b>Acceleratia:</b> a = |m₁−m₂|·g/(m₁+m₂) = |${m1}−${m2}|·${g}/${(m1+m2).toFixed(1)} = <b>${a.toFixed(3)} m/s²</b>`,
+            `<b>Tensiunea in fir:</b> T = 2·m₁·m₂·g/(m₁+m₂) = <b>${T.toFixed(2)} N</b>`,
+            `<b>Forta pe axul scripetului (dinamometru):</b> F = 2·T = 2·${T.toFixed(2)} = <b>${F_dinamometru.toFixed(2)} N</b>`,
+            m1 > m2 ? `m₁ coboara, m₂ urca.` : m2 > m1 ? `m₂ coboara, m₁ urca.` : `Sistem in echilibru.`
+          ],
+          vals: { a, T, F_dinamometru, G1, G2 }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('atwood');
+        if (obiecte[3]) obiecte[3].masa = p.m1;
+        if (obiecte[4]) obiecte[4].masa = p.m2;
+        if (obiecte[3]) { const s = Math.max(25, Math.min(60, p.m1 * 5)); obiecte[3].w = s; obiecte[3].h = s; }
+        if (obiecte[4]) { const s = Math.max(25, Math.min(60, p.m2 * 5)); obiecte[4].w = s; obiecte[4].h = s; }
+        graficeActive = new Set(['v_t', 'y_t', 'Ec_t', 'Ep_t']);
+      }
+    },
+    { id: 'plan_inclinat_cablu', icon: '🚚', titlu: 'Corp pe plan inclinat cu cablu',
+      desc: 'Corp greu (lada) urcat/coborat pe plan inclinat cu cablu paralel sau vertical (V3, V13).',
+      params: [
+        { id: 'm', label: 'Masa corp m', unit: 'kg', val: 2000, min: 0.1, max: 50000, step: 1 },
+        { id: 'h', label: 'Inaltimea planului h', unit: 'm', val: 3, min: 0.1, max: 100, step: 0.1 },
+        { id: 'L', label: 'Lungimea planului L', unit: 'm', val: 5, min: 0.1, max: 200, step: 0.1 },
+        { id: 'T1', label: 'Tensiune cablu paralel T₁', unit: 'N', val: 16000, min: 0, max: 500000, step: 100 },
+        { id: 'T2', label: 'Tensiune cablu vertical T₂', unit: 'N', val: 5000, min: 0, max: 500000, step: 100 },
+        { id: 'dir', label: 'Directie (1=urca, -1=coboara)', unit: '', val: 1, min: -1, max: 1, step: 2 }
+      ],
+      rezolva(p) {
+        const g = sim.g, m = p.m, h = p.h, L = p.L;
+        const sinA = h / L, cosA = Math.sqrt(1 - sinA * sinA);
+        const alpha = Math.asin(sinA) * 180 / Math.PI;
+        const G = m * g;
+        const Gpar = G * sinA, Gperp = G * cosA;
+        const T1 = p.T1, T2 = p.T2;
+        // Normala: N = G*cos(α) - T2 (daca T2 impinge in sus normal la plan)
+        const N = Gperp - T2;
+        // Daca urca: T1 - Gpar - Ff = m*a
+        // Daca uniform: T1 - Gpar - Ff = 0 => Ff = T1 - Gpar
+        const Ff = p.dir > 0 ? T1 - Gpar : Gpar - T1; // for uniform motion
+        const mu = N > 0 ? Math.abs(Ff) / N : 0;
+        // Acceleratie generala
+        const a_urca = (T1 - Gpar - mu * N) / m;
+        const a_coboara = (Gpar - T1 - mu * N) / m;
+        return {
+          pasi: [
+            `<b>Date:</b> m=${m}kg, h=${h}m, L=${L}m → α=${alpha.toFixed(1)}°, T₁=${T1}N, T₂=${T2}N`,
+            `<b>sin(α)</b> = h/L = ${h}/${L} = <b>${sinA.toFixed(4)}</b>, <b>cos(α)</b> = <b>${cosA.toFixed(4)}</b>`,
+            `<b>G</b> = mg = <b>${G.toFixed(1)} N</b>`,
+            `<b>G∥</b> = G·sin(α) = <b>${Gpar.toFixed(1)} N</b>`,
+            `<b>G⊥</b> = G·cos(α) = <b>${Gperp.toFixed(1)} N</b>`,
+            `<b>N</b> = G⊥ − T₂ = ${Gperp.toFixed(1)} − ${T2} = <b>${N.toFixed(1)} N</b>`,
+            p.dir > 0
+              ? `<b>Urcare uniforma:</b> Ff = T₁ − G∥ = ${T1} − ${Gpar.toFixed(1)} = <b>${Ff.toFixed(1)} N</b>`
+              : `<b>Coborare uniforma:</b> Ff = G∥ − T₁ = ${Gpar.toFixed(1)} − ${T1} = <b>${Ff.toFixed(1)} N</b>`,
+            N > 0 ? `<b>Coef. frecare:</b> μ = Ff/N = ${Math.abs(Ff).toFixed(1)}/${N.toFixed(1)} = <b>${mu.toFixed(4)}</b>` : '⚠️ N ≤ 0!',
+          ].filter(s => s),
+          vals: { alpha, G, Gpar, Gperp, N, Ff, mu }
+        };
+      },
+      construieste(p) {
+        incarcaExperiment('plan_inclinat');
+        if (obiecte[3]) {
+          obiecte[3].masa = p.m;
+          obiecte[3].mu = 0.2;
+        }
+        graficeActive = new Set(['v_t', 'N_t', 'Ff_t', 'G_t']);
+        sim.sel = 3; selecteazaObiect(3);
       }
     }
 ];
