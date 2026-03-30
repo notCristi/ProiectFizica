@@ -2,7 +2,7 @@
 
 **Simulator fizic 2D interactiv** — proiect de fizica realizat de **Cristian Todirenchi**.
 
-Un singur fisier HTML (~3760 linii), fara dependinte externe, ruleaza direct in browser.
+Un singur fisier HTML (~5500 linii), fara dependinte externe, ruleaza direct in browser.
 
 ---
 
