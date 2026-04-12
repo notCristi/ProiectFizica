@@ -1,0 +1,1886 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Referat Fizica  Forța de frecare și rezistența mediului</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* ── Reset ───────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    /* ── Palette ─────────────────────────────────────────────────────── */
+    :root {
+      --bg:      #090e14;
+      --bg2:     #0f1621;
+      --bg3:     #161d2b;
+      --card:    #0f1621;
+      --card2:   #161d2b;
+      --border:  #1e2a3a;
+      --border2: #172030;
+      --text:    #e8eef5;
+      --text2:   #8a9ab0;
+      --text3:   #4e5f73;
+      --accent:  #4da6ff;
+      --accent2: #2d8ef0;
+      --green:   #34c957;
+      --red:     #f05149;
+      --amber:   #e8b84b;
+      --purple:  #9b6dff;
+      --cyan:    #26d7c8;
+      --shadow:  0 2px 8px rgba(0,0,0,.5), 0 6px 28px rgba(0,0,0,.35);
+      --shadow-lg: 0 12px 56px rgba(0,0,0,.75);
+      --glow:    0 0 32px rgba(77,166,255,.1);
+      --glow-lg: 0 0 60px rgba(77,166,255,.18);
+      --radius:  12px;
+      --serif: 'EB Garamond', Georgia, serif;
+      --sans:  'DM Sans', system-ui, sans-serif;
+      --mono:  'JetBrains Mono', monospace;
+    }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body  { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.8; }
+
+    /* ── Scrollbar ───────────────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+    /* ── Reading progress bar ────────────────────────────────────────── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 2px; width: 0%;
+      background: linear-gradient(90deg, var(--accent2), var(--accent), var(--purple));
+      z-index: 9999; transition: width .08s linear;
+      box-shadow: 0 0 8px rgba(77,166,255,.4);
+    }
+
+    /* ── Typography ──────────────────────────────────────────────────── */
+    h1, h2, h3, h4 { font-family: var(--serif); font-weight: 700; line-height: 1.2; color: var(--text); }
+    h1  { font-size: 2.6rem; }
+    h2  {
+      font-size: 1.7rem; color: var(--text); margin-bottom: 1.6rem;
+      padding-bottom: .7rem; position: relative;
+    }
+    h2::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, var(--accent) 0%, var(--border) 35%, transparent 100%);
+    }
+    h3  { font-size: 1.22rem; color: var(--text); margin-bottom: .7rem; }
+    h4  { font-size: .95rem; color: var(--text2); margin-bottom: .4rem; font-family: var(--sans); font-weight: 600; letter-spacing: .01em; }
+    p   { margin-bottom: 1.1rem; color: var(--text2); font-size: .97rem; }
+    strong { color: var(--text); }
+    em  { color: var(--accent); font-style: normal; font-weight: 500; }
+    sub, sup { font-size: .72em; }
+    code { font-family: var(--mono); font-size: .84em; background: var(--bg3); padding: 2px 6px; border-radius: 4px; color: var(--cyan); }
+
+    /* ── Layout ──────────────────────────────────────────────────────── */
+    .page-wrap { max-width: 900px; margin: 0 auto; padding: 0 32px 120px; }
+
+    /* ── Cover ───────────────────────────────────────────────────────── */
+    .cover {
+      position: relative; overflow: hidden;
+      background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(77,166,255,.14) 0%, transparent 65%),
+                  linear-gradient(175deg, #0a1220 0%, #080d17 50%, #060b12 100%);
+      padding: 120px 40px 100px; text-align: center;
+      border-bottom: 1px solid var(--border2);
+    }
+    .cover::before {
+      content: ''; position: absolute; inset: 0; pointer-events: none;
+      background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='0.8' fill='%234da6ff' fill-opacity='0.07'/%3E%3C/svg%3E");
+    }
+    .cover::after {
+      content: ''; position: absolute; bottom: 0; left: 0; right: 0; height: 1px;
+      background: linear-gradient(90deg, transparent 0%, var(--accent) 30%, var(--purple) 70%, transparent 100%);
+      opacity: .3;
+    }
+    .cover-badge {
+      display: inline-block; position: relative;
+      background: rgba(77,166,255,.08); border: 1px solid rgba(77,166,255,.2);
+      border-radius: 20px; padding: 5px 20px;
+      font-size: .7rem; letter-spacing: 2.5px; text-transform: uppercase;
+      font-family: var(--mono); color: var(--accent); margin-bottom: 36px;
+    }
+    .cover h1 {
+      font-size: 3.2rem; font-weight: 700; color: var(--text); position: relative;
+      text-shadow: 0 0 80px rgba(77,166,255,.2); margin-bottom: 16px; line-height: 1.15;
+    }
+    .cover h1 span { color: var(--accent); }
+    .cover-subtitle {
+      font-size: 1.08rem; color: var(--text3); margin-bottom: 56px;
+      font-family: var(--serif); font-style: italic; letter-spacing: .02em;
+    }
+    .cover-divider {
+      width: 40px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+      margin: 0 auto 40px; opacity: .6;
+    }
+    .cover-meta {
+      display: inline-flex; flex-wrap: wrap; justify-content: center;
+      border: 1px solid var(--border); border-radius: 14px;
+      overflow: hidden; background: rgba(255,255,255,.02);
+      backdrop-filter: blur(8px);
+    }
+    .cover-meta-item {
+      padding: 14px 32px; display: flex; flex-direction: column; align-items: center;
+      gap: 4px; border-right: 1px solid var(--border);
+    }
+    .cover-meta-item:last-child { border-right: none; }
+    .cover-meta-item strong {
+      font-size: .62rem; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--text3); font-family: var(--mono); font-weight: 400;
+    }
+    .cover-meta-item span { font-size: .9rem; color: var(--text); font-weight: 600; }
+
+    /* ── Section spacing ─────────────────────────────────────────────── */
+    .section { margin-top: 80px; }
+    .section-title-row { display: flex; align-items: center; gap: 0; margin-bottom: .3rem; }
+    .section-nr {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 30px; height: 30px; border-radius: 8px;
+      background: linear-gradient(135deg, rgba(77,166,255,.18), rgba(77,166,255,.06));
+      border: 1px solid rgba(77,166,255,.22);
+      color: var(--accent); font-size: .8rem; font-weight: 700;
+      margin-right: 14px; flex-shrink: 0; font-family: var(--mono);
+    }
+
+    /* ── Card ────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 28px 32px;
+      box-shadow: var(--shadow); margin-bottom: 24px;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .card:hover {
+      border-color: rgba(77,166,255,.18);
+      box-shadow: var(--shadow), var(--glow);
+    }
+    .card-tinted {
+      background: var(--card2); border: 1px solid var(--border2);
+      border-radius: var(--radius); padding: 20px 24px; margin-bottom: 16px;
+    }
+
+    /* ── Formula box ─────────────────────────────────────────────────── */
+    .formula-box {
+      background: linear-gradient(135deg, rgba(77,166,255,.07), rgba(155,109,255,.04));
+      border-left: 3px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 18px 24px; margin: 22px 0;
+      font-family: var(--mono); font-size: 1.12rem; color: var(--accent);
+      box-shadow: var(--glow);
+    }
+    .formula-box .formula-label {
+      font-family: var(--sans); font-size: .7rem; font-weight: 600;
+      color: var(--text3); letter-spacing: 1.2px; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .formula-box .formula-note {
+      font-family: var(--mono); font-size: .82rem; color: var(--text3);
+      margin-top: 10px;
+    }
+
+    /* ── Info grid ───────────────────────────────────────────────────── */
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 20px 0; }
+    .info-box {
+      background: var(--bg3); border-radius: var(--radius);
+      padding: 20px 22px; border: 1px solid var(--border2);
+      transition: border-color .2s ease;
+    }
+    .info-box:hover { border-color: var(--border); }
+    .info-box h4 {
+      font-size: .68rem; text-transform: uppercase; letter-spacing: 1.4px;
+      color: var(--accent); margin-bottom: 12px; font-family: var(--mono);
+      font-weight: 600;
+    }
+    .info-box ul { list-style: none; padding: 0; }
+    .info-box ul li {
+      padding: 5px 0; font-size: .89rem; color: var(--text2);
+      display: flex; align-items: flex-start; gap: 10px;
+      border-bottom: 1px solid var(--border2);
+    }
+    .info-box ul li:last-child { border-bottom: none; }
+    .info-box ul li::before { content: '▸'; color: var(--accent); flex-shrink: 0; font-size: .72rem; margin-top: 3px; opacity: .7; }
+
+    /* ── Table ───────────────────────────────────────────────────────── */
+    .tbl-wrap { overflow-x: auto; margin: 20px 0; border-radius: var(--radius); border: 1px solid var(--border); }
+    table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+    thead tr { background: var(--bg3); }
+    thead th {
+      padding: 12px 16px; text-align: left; font-weight: 600;
+      color: var(--text3); font-family: var(--mono); font-size: .72rem;
+      letter-spacing: .8px; text-transform: uppercase;
+      border-bottom: 1px solid var(--border);
+    }
+    tbody tr { border-bottom: 1px solid var(--border2); transition: background .12s; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:nth-child(even) { background: rgba(255,255,255,.012); }
+    tbody tr:hover { background: rgba(77,166,255,.04); }
+    tbody td { padding: 10px 16px; color: var(--text2); line-height: 1.5; }
+    .tbl-yes  { color: var(--green); font-weight: 600; }
+    .tbl-no   { color: var(--red);   font-weight: 600; }
+    .tbl-diff { color: var(--amber); font-weight: 600; }
+
+    /* ── Highlight / callout ─────────────────────────────────────────── */
+    .highlight {
+      background: linear-gradient(135deg, rgba(232,184,75,.06), rgba(232,184,75,.02));
+      border: 1px solid rgba(232,184,75,.2); border-left: 3px solid var(--amber);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      padding: 16px 22px; margin: 22px 0; font-size: .93rem; color: var(--amber);
+      line-height: 1.7;
+    }
+    .highlight strong { color: var(--amber); }
+
+    /* ── Experiment section ──────────────────────────────────────────── */
+    .exp-section {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 16px; padding: 32px 36px; margin: 28px 0;
+      position: relative; overflow: hidden;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .exp-section:hover { border-color: rgba(77,166,255,.25); box-shadow: var(--glow); }
+    .exp-section::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--purple), transparent);
+    }
+    .exp-section.exp-green::before { background: linear-gradient(90deg, var(--green), var(--cyan), transparent); }
+    .exp-section.exp-green:hover { border-color: rgba(52,201,87,.25); box-shadow: 0 0 32px rgba(52,201,87,.08); }
+    .exp-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+    .exp-tag {
+      background: rgba(77,166,255,.08); color: var(--accent);
+      border: 1px solid rgba(77,166,255,.18); border-radius: 20px;
+      padding: 3px 14px; font-size: .7rem; font-weight: 600;
+      font-family: var(--mono); letter-spacing: .3px;
+    }
+    .exp-tag.green {
+      background: rgba(52,201,87,.08); color: var(--green);
+      border-color: rgba(52,201,87,.2);
+    }
+    .exp-steps { margin: 18px 0 0; padding: 0; list-style: none; }
+    .exp-steps li {
+      padding: 9px 0 9px 34px; position: relative;
+      color: var(--text2); font-size: .9rem; border-bottom: 1px solid var(--border2);
+      line-height: 1.6;
+    }
+    .exp-steps li:last-child { border-bottom: none; }
+    .exp-steps li::before {
+      content: attr(data-n); position: absolute; left: 0; top: 10px;
+      width: 20px; height: 20px; background: rgba(77,166,255,.12);
+      border: 1px solid rgba(77,166,255,.25); color: var(--accent);
+      border-radius: 6px; font-size: .68rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+    }
+
+    /* ── Sim button ──────────────────────────────────────────────────── */
+    .btn-sim {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: rgba(77,166,255,.1); color: var(--accent);
+      border: 1px solid rgba(77,166,255,.25); border-radius: 10px;
+      padding: 11px 26px; font-size: .9rem; font-weight: 600;
+      cursor: pointer; font-family: var(--sans); margin-top: 22px;
+      transition: all .18s ease; letter-spacing: .01em;
+    }
+    .btn-sim:hover {
+      background: rgba(77,166,255,.18); border-color: var(--accent);
+      box-shadow: 0 4px 20px rgba(77,166,255,.25), var(--glow);
+      transform: translateY(-2px);
+    }
+    .btn-sim:active { transform: translateY(0); box-shadow: none; }
+    .btn-sim svg { width: 16px; height: 16px; }
+    .btn-sim.green {
+      background: rgba(52,201,87,.08); color: var(--green);
+      border-color: rgba(52,201,87,.22);
+    }
+    .btn-sim.green:hover {
+      background: rgba(52,201,87,.16); border-color: var(--green);
+      box-shadow: 0 4px 20px rgba(52,201,87,.2), 0 0 28px rgba(52,201,87,.08);
+    }
+
+    /* ── Results charts ──────────────────────────────────────────────── */
+    .results-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 24px 0; }
+    .chart-wrap {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+      transition: border-color .2s ease;
+    }
+    .chart-wrap:hover { border-color: rgba(77,166,255,.18); }
+    .chart-wrap h4 {
+      margin-bottom: 14px; text-align: center; font-size: .72rem;
+      color: var(--text3); font-family: var(--mono); font-weight: 500;
+      letter-spacing: .5px; text-transform: uppercase;
+    }
+    .chart-svg { width: 100%; display: block; }
+    .chart-svg svg { display: block; width: 100%; border-radius: 8px; }
+    .chart-note {
+      margin-top: 10px; text-align: center; font-size: .72rem;
+      color: var(--text3); font-family: var(--mono); line-height: 1.5;
+    }
+
+    /* ── App cards  3D flip ─────────────────────────────────────────── */
+    .app-grid {
+      display: grid; grid-template-columns: repeat(2, 1fr);
+      gap: 20px; margin: 28px 0;
+    }
+    /* perspective wrapper  no styling, just 3D context */
+    .app-card {
+      perspective: 1100px; height: 310px; cursor: default;
+    }
+    .app-card-inner {
+      position: relative; width: 100%; height: 100%;
+      transform-style: preserve-3d;
+      transition: transform .6s cubic-bezier(.4, 0, .2, 1);
+    }
+    .app-card:hover .app-card-inner { transform: rotateY(180deg); }
+    /* shared face styles */
+    .app-card-front, .app-card-back {
+      position: absolute; inset: 0;
+      backface-visibility: hidden; -webkit-backface-visibility: hidden;
+      border-radius: 16px; border: 1px solid var(--border);
+      overflow: hidden;
+    }
+    /* FRONT */
+    .app-card-front {
+      background: var(--card);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 30px 24px; text-align: center;
+      transition: border-color .2s;
+    }
+    .app-card-front::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(77,166,255,.4), transparent);
+      opacity: 0; transition: opacity .3s;
+    }
+    .app-card:hover .app-card-front::before { opacity: 1; }
+    .app-icon { font-size: 2.6rem; display: block; margin-bottom: 14px; line-height: 1; }
+    .app-card-front h4 {
+      font-size: .98rem; font-family: var(--sans); font-weight: 700;
+      color: var(--text); margin-bottom: 10px;
+    }
+    .app-card-front p  { font-size: .82rem; color: var(--text3); margin: 0; line-height: 1.6; }
+    .app-flip-hint {
+      position: absolute; bottom: 12px; right: 14px;
+      font-size: .64rem; color: var(--text3); font-family: var(--mono);
+      letter-spacing: .5px; opacity: .5;
+    }
+    /* BACK */
+    .app-card-back {
+      transform: rotateY(180deg);
+      background: var(--bg3);
+      padding: 18px 20px 14px;
+      display: flex; flex-direction: column;
+    }
+    .app-card-back::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--accent), var(--purple), transparent);
+    }
+    .app-back-title {
+      font-family: var(--mono); font-size: .72rem; font-weight: 700;
+      color: var(--accent); letter-spacing: .8px; text-transform: uppercase;
+      margin-bottom: 10px; flex-shrink: 0;
+      padding-bottom: 8px; border-bottom: 1px solid var(--border2);
+    }
+    .app-back-body {
+      font-size: .79rem; color: var(--text2); line-height: 1.6;
+      flex: 1; overflow-y: auto; overflow-x: hidden;
+      /* thin scrollbar inside card */
+      scrollbar-width: thin; scrollbar-color: var(--border2) transparent;
+    }
+    .app-back-body::-webkit-scrollbar { width: 3px; }
+    .app-back-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    .app-back-body p { margin-bottom: .5rem; color: var(--text2); font-size: .79rem; }
+    .app-back-body p:last-child { margin-bottom: 0; }
+    .app-back-formula {
+      display: inline-block; background: rgba(77,166,255,.08);
+      border: 1px solid rgba(77,166,255,.15); border-radius: 6px;
+      padding: 3px 9px; font-family: var(--mono); font-size: .75rem;
+      color: var(--accent); margin: 2px 0 5px; line-height: 1.5;
+      white-space: nowrap;
+    }
+    .app-back-num {
+      color: var(--amber); font-weight: 600; font-family: var(--mono); font-size: .78rem;
+    }
+    @media (max-width: 700px) {
+      .app-grid { grid-template-columns: 1fr; }
+      .app-card { height: auto; perspective: none; }
+      .app-card-inner { transform-style: flat; }
+      .app-card:hover .app-card-inner { transform: none; }
+      .app-card-front { position: relative; inset: auto; backface-visibility: visible; border-radius: 16px 16px 0 0; border-bottom: none; }
+      .app-card-back { position: relative; inset: auto; transform: none; backface-visibility: visible; border-radius: 0 0 16px 16px; overflow: visible; }
+    }
+
+    /* ── Conclusions ─────────────────────────────────────────────────── */
+    .concl-list { list-style: none; padding: 0; }
+    .concl-list li {
+      display: flex; gap: 16px; align-items: flex-start;
+      padding: 16px 0; border-bottom: 1px solid var(--border2);
+      font-size: .93rem; color: var(--text2); line-height: 1.7;
+    }
+    .concl-list li:last-child { border-bottom: none; }
+    .concl-num {
+      width: 30px; height: 30px; flex-shrink: 0; margin-top: 1px;
+      background: linear-gradient(135deg, rgba(77,166,255,.15), rgba(77,166,255,.05));
+      border: 1px solid rgba(77,166,255,.22);
+      color: var(--accent); border-radius: 8px;
+      font-size: .75rem; font-weight: 700; font-family: var(--mono);
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── Bibliography ────────────────────────────────────────────────── */
+    .bib-list { list-style: none; padding: 0; }
+    .bib-list li {
+      padding: 10px 0 10px 40px; position: relative;
+      color: var(--text2); font-size: .875rem;
+      border-bottom: 1px solid var(--border2); line-height: 1.6;
+    }
+    .bib-list li:last-child { border-bottom: none; }
+    .bib-list li::before {
+      content: '[' attr(data-n) ']'; position: absolute; left: 0;
+      font-family: var(--mono); font-size: .72rem;
+      color: var(--accent); font-weight: 600; top: 11px; opacity: .8;
+    }
+
+    /* ── Simulator CTA ───────────────────────────────────────────────── */
+    .sim-cta-wrap {
+      background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(77,166,255,.06) 0%, transparent 70%),
+                  var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 90px 24px 100px; text-align: center;
+    }
+    .sim-cta-card {
+      display: inline-flex; flex-direction: column; align-items: center;
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: 22px; padding: 56px 68px; max-width: 600px;
+      box-shadow: var(--shadow-lg), var(--glow-lg);
+      position: relative; overflow: hidden;
+    }
+    .sim-cta-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--purple), transparent);
+      opacity: .6;
+    }
+    .sim-cta-icon { font-size: 3.8rem; margin-bottom: 20px; line-height: 1; }
+    .sim-cta-title {
+      font-family: var(--serif); font-size: 2.1rem; color: var(--text);
+      border: none; padding: 0; margin: 0 0 12px;
+    }
+    .sim-cta-title::after { display: none; }
+    .sim-cta-desc { color: var(--text2); font-size: .95rem; margin-bottom: 36px; line-height: 1.7; }
+    .sim-cta-btn {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: #fff; text-decoration: none; border-radius: 12px;
+      padding: 16px 44px; font-size: 1.05rem; font-weight: 700;
+      font-family: var(--sans); box-shadow: 0 6px 28px rgba(77,166,255,.4);
+      transition: transform .18s ease, box-shadow .18s ease;
+      letter-spacing: .01em;
+    }
+    .sim-cta-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(77,166,255,.55); }
+    .sim-cta-btn:active { transform: translateY(0); }
+    .sim-cta-hint { margin: 20px 0 0; color: var(--text3); font-size: .73rem; font-family: var(--mono); letter-spacing: .5px; }
+
+    /* ── Experiment Modal ────────────────────────────────────────────── */
+    .exp-modal-backdrop {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,.9); backdrop-filter: blur(14px);
+      z-index: 9000; align-items: center; justify-content: center;
+    }
+    .exp-modal-backdrop.open { display: flex; }
+    .exp-modal {
+      background: var(--bg2); border-radius: 16px;
+      width: min(1200px, 96vw); height: min(700px, 92vh);
+      box-shadow: var(--shadow-lg); display: flex; flex-direction: column;
+      overflow: hidden; border: 1px solid var(--border);
+    }
+    .exp-modal-header {
+      padding: 12px 20px; background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .exp-modal-dots { display: flex; gap: 7px; }
+    .exp-modal-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .exp-modal-dot:nth-child(1) { background: #ff5f57; }
+    .exp-modal-dot:nth-child(2) { background: #febc2e; }
+    .exp-modal-dot:nth-child(3) { background: #28c840; }
+    .exp-modal-title { font-family: var(--mono); font-size: .75rem; color: var(--text3); margin-left: 12px; letter-spacing: .5px; }
+    .exp-modal-close {
+      background: none; border: 1px solid var(--border); color: var(--text3);
+      border-radius: 6px; padding: 4px 14px; font-size: .74rem; cursor: pointer;
+      font-family: var(--mono); transition: all .15s ease;
+    }
+    .exp-modal-close:hover { background: var(--red); color: #fff; border-color: var(--red); }
+    .exp-modal-body { display: flex; flex: 1; overflow: hidden; }
+    .exp-sim-panel {
+      flex: 1.5; border-right: 1px solid var(--border); overflow: hidden;
+      display: flex; flex-direction: column;
+    }
+    .exp-sim-label {
+      padding: 7px 18px; background: var(--bg3);
+      font-family: var(--mono); font-size: .65rem; color: var(--text3);
+      letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border);
+    }
+    .exp-sim-frame { flex: 1; width: 100%; border: none; display: block; }
+    .exp-chart-panel {
+      flex: 1; display: flex; flex-direction: column; background: var(--bg2); overflow: hidden;
+    }
+    .exp-chart-label {
+      padding: 7px 18px; background: var(--bg3);
+      font-family: var(--mono); font-size: .65rem; color: var(--text3);
+      letter-spacing: 1px; text-transform: uppercase; border-bottom: 1px solid var(--border);
+    }
+    .exp-chart-inner { flex: 1; padding: 16px; overflow-y: auto; }
+    .exp-obs {
+      margin-top: 14px; padding: 12px 16px;
+      background: rgba(77,166,255,.04); border-radius: 8px;
+      border-left: 2px solid rgba(77,166,255,.35);
+      font-size: .78rem; color: var(--text2); line-height: 1.65;
+    }
+    .exp-obs strong { color: var(--accent); }
+
+    /* ── Responsive ──────────────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .cover h1 { font-size: 2.1rem; }
+      .cover { padding: 80px 24px 70px; }
+      .cover-meta { flex-direction: column; border-radius: 12px; }
+      .cover-meta-item { border-right: none; border-bottom: 1px solid var(--border); }
+      .info-grid, .results-grid, .app-grid { grid-template-columns: 1fr; }
+      .exp-modal-body { flex-direction: column; }
+      .exp-sim-panel { border-right: none; border-bottom: 1px solid var(--border); flex: none; height: 50%; }
+      .exp-chart-panel { flex: none; height: 50%; }
+      .page-wrap { padding: 0 18px 70px; }
+      .sim-cta-card { padding: 40px 28px; }
+      .card { padding: 20px 22px; }
+      .exp-section { padding: 24px 22px; }
+    }
+
+    /* ── Interactive calculator ──────────────────────────────────────── */
+    .calc-box {
+      background: var(--bg3); border: 1px solid var(--border);
+      border-radius: var(--radius); margin: 22px 0; overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .calc-box:focus-within {
+      border-color: rgba(77,166,255,.3);
+      box-shadow: var(--shadow), var(--glow);
+    }
+    .calc-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 11px 20px; background: rgba(77,166,255,.05);
+      border-bottom: 1px solid var(--border);
+    }
+    .calc-label {
+      font-family: var(--mono); font-size: .65rem; letter-spacing: 1.4px;
+      text-transform: uppercase; color: var(--accent); font-weight: 600;
+    }
+    .calc-formula {
+      font-family: var(--mono); font-size: .98rem; color: var(--text);
+      font-weight: 500; letter-spacing: .3px;
+    }
+    .calc-body {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 0; align-items: stretch;
+    }
+    .calc-inputs { padding: 20px 22px; }
+    .calc-row {
+      display: flex; flex-direction: column; gap: 6px;
+      margin-bottom: 16px;
+    }
+    .calc-row:last-child { margin-bottom: 0; }
+    .calc-row label {
+      font-size: .77rem; color: var(--text2); font-weight: 500;
+      font-family: var(--sans);
+    }
+    .calc-slider-wrap { display: flex; align-items: center; gap: 12px; }
+    .calc-slider-wrap input[type="range"] {
+      flex: 1; height: 3px; cursor: pointer; accent-color: var(--accent);
+      border-radius: 2px;
+    }
+    .calc-num {
+      width: 74px; background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 5px 8px;
+      font-family: var(--mono); font-size: .8rem; text-align: right;
+      transition: border-color .15s ease;
+    }
+    .calc-num:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(77,166,255,.1); }
+    .calc-select-wrap { display: flex; }
+    .calc-select {
+      flex: 1; background: var(--bg2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 7px 10px;
+      font-family: var(--sans); font-size: .84rem; cursor: pointer;
+      transition: border-color .15s ease;
+    }
+    .calc-select:focus { outline: none; border-color: var(--accent); }
+    .calc-result {
+      background: linear-gradient(135deg, rgba(77,166,255,.07), rgba(77,166,255,.03));
+      border-left: 1px solid var(--border);
+      padding: 22px 28px; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 5px;
+      min-width: 140px; text-align: center;
+    }
+    .calc-result-label { font-family: var(--mono); font-size: .78rem; color: var(--text3); }
+    .calc-result-val {
+      font-family: var(--mono); font-size: 1.9rem; font-weight: 700;
+      color: var(--accent); line-height: 1; letter-spacing: -1px;
+    }
+    .calc-result-unit { font-family: var(--mono); font-size: .76rem; color: var(--text3); }
+    .calc-result-secondary { font-family: var(--mono); font-size: .7rem; color: var(--green); margin-top: 5px; }
+    @media (max-width: 600px) {
+      .calc-body { grid-template-columns: 1fr; }
+      .calc-result { border-left: none; border-top: 1px solid var(--border); flex-direction: row; gap: 10px; }
+    }
+
+    /* ── TOC styling ─────────────────────────────────────────────────── */
+    .toc-card ol { padding-left: 18px; }
+    .toc-card ol li { padding: 3px 0; }
+    .toc-card a {
+      color: var(--text2); text-decoration: none; font-size: .93rem;
+      transition: color .15s ease; display: inline-block;
+    }
+    .toc-card a:hover { color: var(--accent); }
+    .toc-card ol ol { margin-top: 4px; padding-left: 16px; }
+    .toc-card ol ol li a { font-size: .85rem; color: var(--text3); }
+    .toc-card ol ol li a:hover { color: var(--accent); }
+
+    /* ── Print ───────────────────────────────────────────────────────── */
+    @media print {
+      #progress-bar, .btn-sim, .exp-modal-backdrop, .sim-cta-wrap { display: none; }
+      body { background: #fff; color: #000; }
+    }
+  </style>
+</head>
+<body>
+<div id="progress-bar"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- COVER                                                                     -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-badge">Referat Fizică · Clasa a IX‑a A · Todirenchi Cristian</div>
+  <h1>Forța de frecare și<br>rezistența mediului</h1>
+  <p class="cover-subtitle">Studiu comparativ cu demonstrații interactive</p>
+  <div class="cover-meta">
+    <div class="cover-meta-item"><strong>Disciplina</strong><span>Fizică</span></div>
+    <div class="cover-meta-item"><strong>Tema</strong><span>Forțe disipative</span></div>
+    <div class="cover-meta-item"><strong>An școlar</strong><span>2025 – 2026</span></div>
+    
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- TABLE OF CONTENTS                                                         -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+<div class="section">
+  <div class="card toc-card">
+    <h3 style="margin-bottom:18px;font-size:1.05rem;letter-spacing:.01em;">Cuprins</h3>
+    <ol style="padding-left:20px;line-height:2.1;">
+      <li><a href="#introducere">Introducere</a></li>
+      <li><a href="#teoretic">Noțiuni teoretice</a>
+        <ol style="padding-left:18px;margin-top:2px;" type="a">
+          <li><a href="#frecare">Forța de frecare</a></li>
+          <li><a href="#rezistenta">Rezistența mediului</a></li>
+        </ol>
+      </li>
+      <li><a href="#comparatie">Asemănări și diferențe</a></li>
+      <li><a href="#experimente">Experimente</a></li>
+      <li><a href="#rezultate">Analiza rezultatelor</a></li>
+      <li><a href="#aplicatii">Aplicații în tehnologie și viața reală</a></li>
+      <li><a href="#concluzii">Concluzii</a></li>
+      <li><a href="#bibliografie">Bibliografie</a></li>
+    </ol>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 1. INTRODUCERE                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="introducere">
+  <div class="section-title-row">
+    <span class="section-nr">1</span>
+    <h2>Introducere</h2>
+  </div>
+
+  <p>
+    În mecanică, una dintre cele mai importante probleme practice este înțelegerea
+    forțelor care <strong>se opun mișcării</strong> unui corp. Aceste forțe  forța
+    de frecare și rezistența mediului  sunt prezente în aproape orice fenomen fizic
+    din viața cotidiană și au implicații majore în inginerie, transport și sport.
+  </p>
+  <p>
+    Fără frecare, nu am putea merge, mașinile nu ar putea frâna, iar ciocanele de
+    construcție nu ar putea bate cuie. Fără rezistența aerului, un parașutist ar
+    continua să accelereze indefinit, atingând viteze letale. Ambele forțe
+    <strong>transformă energia cinetică în căldură</strong>, disipând energia din
+    sistem  de aceea se numesc <em>forțe disipative</em>.
+  </p>
+  <p>
+    Referatul analizează comparativ cele două forțe: definițiile și formulele
+    lor, factorii de care depind, asemănările și deosebirile, câte două experimente
+    ilustrative cu ajutorul simulatorului fizic 2D, rezultate și aplicații reale.
+  </p>
+
+  <div class="highlight">
+    <strong>Obiectivul referatului:</strong> Să descrie, să compare și să demonstreze
+    experimental forța de frecare și rezistența mediului, evidențiind rolul lor în
+    fizică și tehnologie.
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 2. TEORETIC                                                               -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="teoretic">
+  <div class="section-title-row">
+    <span class="section-nr">2</span>
+    <h2>Noțiuni teoretice</h2>
+  </div>
+
+  <!-- 2.1 Frecare -->
+  <div id="frecare">
+    <h3>2.1 Forța de frecare</h3>
+    <p>
+      <strong>Forța de frecare</strong> este forța care apare la contactul dintre
+      suprafețele a două corpuri și se opune mișcării relative (sau tendinței de
+      mișcare relativă) dintre ele. Ea acționează <em>tangențial</em> la suprafața
+      de contact, în direcția opusă mișcării.
+    </p>
+
+    <div class="info-grid">
+      <div class="info-box">
+        <h4>Tipuri de frecare</h4>
+        <ul>
+          <li>Frecare statică (corp în repaus)</li>
+          <li>Frecare cinetică / de alunecare</li>
+          <li>Frecare de rostogolire</li>
+          <li>Frecare internă (vâscozitate)</li>
+        </ul>
+      </div>
+      <div class="info-box">
+        <h4>Factori de influență</h4>
+        <ul>
+          <li>Natura suprafețelor (μ)</li>
+          <li>Forța normală de apăsare (N)</li>
+          <li>Starea suprafețelor (rugozitate)</li>
+          <li>Independentă de aria de contact</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="calc-box" id="calc-frecare">
+      <div class="calc-header">
+        <span class="calc-label">Calculator interactiv</span>
+        <span class="calc-formula">F<sub>f</sub> = μ · N</span>
+      </div>
+      <div class="calc-body">
+        <div class="calc-inputs">
+          <div class="calc-row">
+            <label>μ  coeficient de frecare</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0" max="1" step="0.01" value="0.4" id="ff-mu" oninput="calcFf()">
+              <input type="number" min="0" max="1" step="0.01" value="0.4" id="ff-mu-n" class="calc-num" oninput="syncSlider('ff-mu','ff-mu-n',0,1);calcFf()">
+            </div>
+          </div>
+          <div class="calc-row">
+            <label>N  forța normală [N]</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0" max="1000" step="1" value="100" id="ff-N" oninput="calcFf()">
+              <input type="number" min="0" max="10000" step="1" value="100" id="ff-N-n" class="calc-num" oninput="syncSlider('ff-N','ff-N-n',0,1000);calcFf()">
+            </div>
+          </div>
+        </div>
+        <div class="calc-result">
+          <span class="calc-result-label">F<sub>f</sub> =</span>
+          <span class="calc-result-val" id="ff-result">40.00</span>
+          <span class="calc-result-unit">N</span>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      Coeficientul de frecare <strong>μ</strong> depinde exclusiv de natura celor
+      două suprafețe în contact. Valori tipice:
+    </p>
+
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Pereche de suprafețe</th><th>μ static</th><th>μ cinetic</th></tr></thead>
+        <tbody>
+          <tr><td>Metal pe metal (uscat)</td><td>0.15 – 0.25</td><td>0.10 – 0.20</td></tr>
+          <tr><td>Lemn pe lemn</td><td>0.25 – 0.50</td><td>0.20 – 0.40</td></tr>
+          <tr><td>Cauciuc pe asfalt</td><td>0.60 – 0.80</td><td>0.50 – 0.70</td></tr>
+          <tr><td>Gheață pe gheață</td><td>0.03 – 0.05</td><td>0.01 – 0.03</td></tr>
+          <tr><td>Teflon pe Teflon</td><td>0.04</td><td>0.04</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>
+      Important: forța de frecare <em>statică maximă</em> este întotdeauna mai mare
+      decât forța de frecare <em>cinetică</em>  de aceea este mai greu să pornești
+      un corp din repaus decât să-l menții în mișcare uniformă.
+    </p>
+  </div>
+
+  <!-- 2.2 Rezistența mediului -->
+  <div id="rezistenta" style="margin-top:36px;">
+    <h3>2.2 Rezistența mediului</h3>
+    <p>
+      <strong>Rezistența mediului</strong> (forța de drag) este forța exercitată de
+      un fluid (lichid sau gaz) asupra unui corp care se deplasează prin acesta. Spre
+      deosebire de frecare, ea <strong>depinde de viteza corpului</strong>  cu cât
+      corpul se mișcă mai repede, cu atât forța de rezistență este mai mare.
+    </p>
+
+    <div class="info-grid">
+      <div class="info-box">
+        <h4>Factori de influență</h4>
+        <ul>
+          <li>Viteza corpului (v)</li>
+          <li>Densitatea fluidului (ρ)</li>
+          <li>Coeficientul aerodinamic (C<sub>d</sub>)</li>
+          <li>Secțiunea transversală (A)</li>
+        </ul>
+      </div>
+      <div class="info-box">
+        <h4>Regimuri de curgere</h4>
+        <ul>
+          <li>Stokes (viteze mici): F ∝ v</li>
+          <li>Newtonian (viteze mari): F ∝ v²</li>
+          <li>Tranziție la Re ≈ 1000</li>
+          <li>Aplicare generală: regim turbulent</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="calc-box" id="calc-drag">
+      <div class="calc-header">
+        <span class="calc-label">Calculator interactiv</span>
+        <span class="calc-formula">F<sub>d</sub> = ½ · ρ · C<sub>d</sub> · A · v²</span>
+      </div>
+      <div class="calc-body">
+        <div class="calc-inputs">
+          <div class="calc-row">
+            <label>ρ  mediu fluid</label>
+            <div class="calc-select-wrap">
+              <select id="fd-rho" onchange="calcFd()" class="calc-select">
+                <option value="1.225">Aer (1.225 kg/m³)</option>
+                <option value="1000">Apă (1000 kg/m³)</option>
+                <option value="13600">Mercur (13 600 kg/m³)</option>
+                <option value="0.09">Hidrogen (0.09 kg/m³)</option>
+              </select>
+            </div>
+          </div>
+          <div class="calc-row">
+            <label>C<sub>d</sub>  coeficient de drag</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0.01" max="2" step="0.01" value="0.47" id="fd-cd" oninput="calcFd()">
+              <input type="number" min="0.01" max="5" step="0.01" value="0.47" id="fd-cd-n" class="calc-num" oninput="syncSlider('fd-cd','fd-cd-n',0.01,2);calcFd()">
+            </div>
+          </div>
+          <div class="calc-row">
+            <label>A  secțiune transversală [m²]</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0.01" max="50" step="0.01" value="0.7" id="fd-A" oninput="calcFd()">
+              <input type="number" min="0.001" max="200" step="0.01" value="0.7" id="fd-A-n" class="calc-num" oninput="syncSlider('fd-A','fd-A-n',0.01,50);calcFd()">
+            </div>
+          </div>
+          <div class="calc-row">
+            <label>v  viteza [m/s]</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0" max="100" step="0.5" value="20" id="fd-v" oninput="calcFd()">
+              <input type="number" min="0" max="1000" step="0.5" value="20" id="fd-v-n" class="calc-num" oninput="syncSlider('fd-v','fd-v-n',0,100);calcFd()">
+            </div>
+          </div>
+        </div>
+        <div class="calc-result">
+          <span class="calc-result-label">F<sub>d</sub> =</span>
+          <span class="calc-result-val" id="fd-result">54.07</span>
+          <span class="calc-result-unit">N</span>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      O consecință importantă a dependenței pătratice de viteză este existența
+      <strong>vitezei terminale</strong>: corpul accelerează (sub acțiunea gravitației)
+      până când F<sub>d</sub> = G, moment în care accelerația devine zero și viteza
+      rămâne constantă.
+    </p>
+
+    <div class="calc-box" id="calc-vt">
+      <div class="calc-header">
+        <span class="calc-label">Calculator interactiv</span>
+        <span class="calc-formula">v<sub>t</sub> = √( 2mg / ρ·C<sub>d</sub>·A )</span>
+      </div>
+      <div class="calc-body">
+        <div class="calc-inputs">
+          <div class="calc-row">
+            <label>m  masa corpului [kg]</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0.01" max="200" step="0.01" value="70" id="vt-m" oninput="calcVt()">
+              <input type="number" min="0.01" max="10000" step="0.1" value="70" id="vt-m-n" class="calc-num" oninput="syncSlider('vt-m','vt-m-n',0.01,200);calcVt()">
+            </div>
+          </div>
+          <div class="calc-row">
+            <label>g  gravitație [m/s²]</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0.1" max="25" step="0.01" value="9.81" id="vt-g" oninput="calcVt()">
+              <input type="number" min="0.1" max="25" step="0.01" value="9.81" id="vt-g-n" class="calc-num" oninput="syncSlider('vt-g','vt-g-n',0.1,25);calcVt()">
+            </div>
+          </div>
+          <div class="calc-row">
+            <label>ρ  densitate fluid [kg/m³]</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0.01" max="1000" step="0.01" value="1.225" id="vt-rho" oninput="calcVt()">
+              <input type="number" min="0.01" max="15000" step="0.01" value="1.225" id="vt-rho-n" class="calc-num" oninput="syncSlider('vt-rho','vt-rho-n',0.01,1000);calcVt()">
+            </div>
+          </div>
+          <div class="calc-row">
+            <label>C<sub>d</sub>  coeficient drag</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0.01" max="2" step="0.01" value="0.47" id="vt-cd" oninput="calcVt()">
+              <input type="number" min="0.01" max="5" step="0.01" value="0.47" id="vt-cd-n" class="calc-num" oninput="syncSlider('vt-cd','vt-cd-n',0.01,2);calcVt()">
+            </div>
+          </div>
+          <div class="calc-row">
+            <label>A  secțiune transversală [m²]</label>
+            <div class="calc-slider-wrap">
+              <input type="range" min="0.001" max="50" step="0.001" value="0.7" id="vt-A" oninput="calcVt()">
+              <input type="number" min="0.001" max="200" step="0.001" value="0.7" id="vt-A-n" class="calc-num" oninput="syncSlider('vt-A','vt-A-n',0.001,50);calcVt()">
+            </div>
+          </div>
+        </div>
+        <div class="calc-result">
+          <span class="calc-result-label">v<sub>t</sub> =</span>
+          <span class="calc-result-val" id="vt-result">56.4</span>
+          <span class="calc-result-unit">m/s</span>
+          <span class="calc-result-secondary" id="vt-kmh">(≈ 203 km/h)</span>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      Valori tipice ale coeficientului C<sub>d</sub>:
+    </p>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Obiect</th><th>C<sub>d</sub></th><th>Masă (ref.)</th><th>A [m²]</th><th>v<sub>t</sub> în aer</th></tr></thead>
+        <tbody>
+          <tr><td>Om în cădere liberă (poziție stabilă)</td><td>0.47</td><td>70 kg</td><td>0.70</td><td>≈ 56 m/s (202 km/h)</td></tr>
+          <tr><td>Parașutist cu parașuta deschisă</td><td>1.0 – 1.3</td><td>70 kg</td><td>28 – 35</td><td>≈ 5 – 7 m/s (18–25 km/h)</td></tr>
+          <tr><td>Automobil sport (Ferrari, Porsche)</td><td>0.25 – 0.30</td><td>1 400 kg</td><td>2.1</td><td>≈ 188 m/s (677 km/h)*</td></tr>
+          <tr><td>SUV / camion</td><td>0.35 – 0.45</td><td>2 000 kg</td><td>3.5</td><td>≈ 160 m/s (576 km/h)*</td></tr>
+          <tr><td>Biciclist (poziție aerodinamică)</td><td>0.88</td><td>80 kg</td><td>0.40</td><td>≈ 53 m/s (191 km/h)</td></tr>
+          <tr><td>Biciclist (poziție dreaptă)</td><td>1.15</td><td>80 kg</td><td>0.55</td><td>≈ 44 m/s (158 km/h)</td></tr>
+          <tr><td>Minge de fotbal</td><td>0.47</td><td>0.43 kg</td><td>0.038</td><td>≈ 20 m/s (72 km/h)</td></tr>
+          <tr><td>Minge de golf (cu gropiţe)</td><td>0.24</td><td>0.046 kg</td><td>0.0014</td><td>≈ 43 m/s (155 km/h)</td></tr>
+          <tr><td>Cub</td><td>1.05</td><td>1 kg</td><td>0.04</td><td>≈ 39 m/s (140 km/h)</td></tr>
+          <tr><td>Picătură de ploaie (r = 2 mm)</td><td>0.47</td><td>0.034 g</td><td>1.3×10⁻⁵</td><td>≈ 9 m/s (32 km/h)</td></tr>
+          <tr><td>Avion de linie (Boeing 737)</td><td>0.031</td><td>65 000 kg</td><td>122</td><td>≈ 527 m/s*</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.78rem;color:var(--text3);margin-top:6px;">
+      * Viteza terminală din cădere liberă  practic imposibil de atins; relevantă doar teoretic pentru corpuri foarte masive.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 3. COMPARATIE                                                             -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="comparatie">
+  <div class="section-title-row">
+    <span class="section-nr">3</span>
+    <h2>Asemănări și diferențe</h2>
+  </div>
+
+  <p>
+    Deși ambele forțe se opun mișcării și au caracter disipativ, ele diferă fundamental
+    prin mecanismul de producere și factorii de care depind.
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Criteriu</th>
+          <th>Forța de frecare</th>
+          <th>Rezistența mediului</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Definiție</strong></td>
+          <td>Forță la contactul solid–solid</td>
+          <td>Forță la deplasarea prin fluid</td>
+        </tr>
+        <tr>
+          <td><strong>Opune mișcarea</strong></td>
+          <td class="tbl-yes">DA</td>
+          <td class="tbl-yes">DA</td>
+        </tr>
+        <tr>
+          <td><strong>Caracter disipativ</strong></td>
+          <td class="tbl-yes">DA (→ căldură)</td>
+          <td class="tbl-yes">DA (→ căldură + turbulențe)</td>
+        </tr>
+        <tr>
+          <td><strong>Depinde de viteză</strong></td>
+          <td class="tbl-no">NU (f. cinetică e constantă)</td>
+          <td class="tbl-yes">DA (F ∝ v²)</td>
+        </tr>
+        <tr>
+          <td><strong>Depinde de aria de contact</strong></td>
+          <td class="tbl-no">NU</td>
+          <td class="tbl-yes">DA (A = secțiune transversală)</td>
+        </tr>
+        <tr>
+          <td><strong>Depinde de forța normală</strong></td>
+          <td class="tbl-yes">DA (F<sub>f</sub> = μN)</td>
+          <td class="tbl-no">NU</td>
+        </tr>
+        <tr>
+          <td><strong>Viteză terminală</strong></td>
+          <td class="tbl-no">NU produce</td>
+          <td class="tbl-yes">DA (F<sub>d</sub> = mg → v<sub>t</sub>)</td>
+        </tr>
+        <tr>
+          <td><strong>Mediu de manifestare</strong></td>
+          <td>Suprafețe solide în contact</td>
+          <td>Fluide (aer, apă, ulei)</td>
+        </tr>
+        <tr>
+          <td><strong>Reducere prin design</strong></td>
+          <td>Lubrifianți, rulmenți, materiale</td>
+          <td>Forme aerodinamice, C<sub>d</sub> mic</td>
+        </tr>
+        <tr>
+          <td><strong>Utilă în practică</strong></td>
+          <td class="tbl-diff">DA + NU (ambele)</td>
+          <td class="tbl-no">Preponderent nedorită</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card" style="margin-top:16px;">
+    <h4>Concluzie comparativă</h4>
+    <p style="margin:0;">
+      Ambele forțe sunt <strong>disipative</strong> și se opun mișcării, dar mecanismele
+      lor sunt diferite. Frecarea depinde de suprafețele în contact și de forța normală,
+      fiind <em>independentă</em> de viteză (model Coulomb). Rezistența mediului depinde
+      de viteza corpului la puterea a doua, producând inevitabil o <em>viteză terminală</em>
+      la cădere liberă. Din punct de vedere practic, frecarea poate fi atât utilă (frânare,
+      mers) cât și nedorită (uzură), pe când rezistența mediului este în general un
+      obstacol de depășit în transport și sport.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 4. EXPERIMENTE                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="experimente">
+  <div class="section-title-row">
+    <span class="section-nr">4</span>
+    <h2>Experimente</h2>
+  </div>
+
+  <!-- EXP 1  PLAN INCLINAT -->
+  <div class="exp-section" id="exp1-section">
+    <div class="exp-meta">
+      <span class="exp-tag">EXP 1</span>
+      <span class="exp-tag">Forța de frecare</span>
+      <span class="exp-tag">Plan înclinat</span>
+    </div>
+    <h3>Experimentul 1: Alunecarea unui corp pe plan înclinat</h3>
+
+    <p><strong>Scopul experimentului:</strong> Observarea și analiza forței de frecare
+    cinetice care acționează asupra unui corp care alunecă pe un plan înclinat. Verificarea
+    relației F<sub>f</sub> = μN și a influenței unghiului de înclinare.</p>
+
+    <div class="info-grid">
+      <div class="info-box">
+        <h4>Materiale necesare</h4>
+        <ul>
+          <li>Plan înclinat (simulator)</li>
+          <li>Corp cuboid (m = 3 kg, μ = 0.15)</li>
+          <li>Unghi de înclinare: ~27°</li>
+          <li>Gravitație: 9.81 m/s²</li>
+        </ul>
+      </div>
+      <div class="info-box">
+        <h4>Mărimi măsurate</h4>
+        <ul>
+          <li>Viteza de alunecare v(t)</li>
+          <li>Accelerația netă a</li>
+          <li>Forța normală N</li>
+          <li>Forța de frecare F<sub>f</sub></li>
+        </ul>
+      </div>
+    </div>
+
+    <p><strong>Desfășurarea experimentului:</strong></p>
+    <ul class="exp-steps">
+      <li data-n="1">Se plasează corpul în vârful planului înclinat, în repaus.</li>
+      <li data-n="2">Se pornește simularea; corpul începe să alunece sub acțiunea componentei gravitaționale paralele cu rampa.</li>
+      <li data-n="3">Se observă că forța de frecare F<sub>f</sub> acționează în sens opus mișcării, reducând accelerația față de căderea liberă.</li>
+      <li data-n="4">Se analizează graficul v(t): corpul accelerează uniform, confirmând că F<sub>f</sub> este constantă (model Coulomb).</li>
+    </ul>
+
+    <p><strong>Interpretarea fizică:</strong> Pe planul înclinat, forța normală este
+    N = mg·cos(θ), iar componenta gravitațională paralelă este G<sub>∥</sub> = mg·sin(θ).
+    Accelerația netă este a = g·(sin θ − μ·cos θ). Frecarea <em>nu depinde de viteză</em>,
+    deci accelerația este constantă  viteza crește liniar.</p>
+
+    <button class="btn-sim" onclick="deschideExp('plan_inclinat_referat', 'Plan înclinat  Forța de frecare', 'chart-frecare')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="5,3 19,12 5,21"/>
+      </svg>
+      Deschide simulatorul
+    </button>
+  </div>
+
+  <!-- EXP 2  PARASUTA -->
+  <div class="exp-section exp-green" id="exp2-section">
+    <div class="exp-meta">
+      <span class="exp-tag green">EXP 2</span>
+      <span class="exp-tag green">Rezistența mediului</span>
+      <span class="exp-tag green">Cădere cu drag</span>
+    </div>
+    <h3>Experimentul 2: Cădere liberă cu rezistența mediului</h3>
+
+    <p><strong>Scopul experimentului:</strong> Compararea căderii libere a două sfere
+    de mase diferite în prezența rezistenței aerului. Observarea vitezei terminale și a
+    diferenței de comportament față de căderea liberă ideală (fără drag).</p>
+
+    <div class="info-grid">
+      <div class="info-box">
+        <h4>Materiale necesare</h4>
+        <ul>
+          <li>Sfera mare: m = 5 kg, r = 30 px</li>
+          <li>Sfera mică: m = 1 kg, r = 15 px</li>
+          <li>Coeficient drag C<sub>d</sub> = 0.5</li>
+          <li>Gravitație: 9.81 m/s²</li>
+        </ul>
+      </div>
+      <div class="info-box">
+        <h4>Mărimi măsurate</h4>
+        <ul>
+          <li>Viteza de cădere v(t)</li>
+          <li>Accelerația a(t)</li>
+          <li>Viteza terminală v<sub>t</sub></li>
+          <li>Forța de drag F<sub>d</sub></li>
+        </ul>
+      </div>
+    </div>
+
+    <p><strong>Desfășurarea experimentului:</strong></p>
+    <ul class="exp-steps">
+      <li data-n="1">Se plasează ambele sfere la aceeași înălțime și se activează rezistența aerului (C<sub>d</sub> ≠ 0).</li>
+      <li data-n="2">Se pornește simularea; ambele sfere încep să cadă.</li>
+      <li data-n="3">Se observă că sfera mai ușoară atinge viteza terminală mai devreme  accelerația ei scade la 0.</li>
+      <li data-n="4">Se analizează graficul v(t): curbă exponențială asimptotică, nu linie dreaptă ca la căderea liberă ideală.</li>
+    </ul>
+
+    <p><strong>Interpretarea fizică:</strong> Rezistența aerului F<sub>d</sub> crește cu v².
+    Inițial F<sub>d</sub> ≈ 0 (viteză mică), corpul accelerează ca în vid. Pe măsură ce
+    viteza crește, F<sub>d</sub> crește până când F<sub>d</sub> = mg  moment în care
+    accelerația devine zero și viteza rămâne constantă (viteza terminală).</p>
+
+    <button class="btn-sim green" onclick="deschideExp('parasuta_referat', 'Cădere cu rezistența aerului', 'chart-drag')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="5,3 19,12 5,21"/>
+      </svg>
+      Deschide simulatorul
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 5. REZULTATE                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="rezultate">
+  <div class="section-title-row">
+    <span class="section-nr">5</span>
+    <h2>Analiza rezultatelor</h2>
+  </div>
+
+  <p>
+    Pe baza simulărilor efectuate, prezentăm graficele teoretice ale celor două fenomene.
+    Graficele confirmă predicțiile matematice și pun în evidență diferențele esențiale
+    dintre cele două forțe.
+  </p>
+
+  <div class="results-grid">
+    <div class="chart-wrap">
+      <h4>Grafic 1  Forța de frecare vs. Forța normală</h4>
+      <div id="chartFfVsN" class="chart-svg"></div>
+      <p style="font-size:.78rem;color:var(--text3);margin-top:8px;text-align:center;">
+        F<sub>f</sub> = μ · N &nbsp;(dependență liniară, μ = const)
+      </p>
+    </div>
+    <div class="chart-wrap">
+      <h4>Grafic 2  Rezistența mediului vs. Viteză</h4>
+      <div id="chartFdVsV" class="chart-svg"></div>
+      <p style="font-size:.78rem;color:var(--text3);margin-top:8px;text-align:center;">
+        F<sub>d</sub> = k · v² &nbsp;(dependență pătratică)
+      </p>
+    </div>
+    <div class="chart-wrap">
+      <h4>Grafic 3  Viteză terminală vs. Masă</h4>
+      <div id="chartVtVsM" class="chart-svg"></div>
+      <p style="font-size:.78rem;color:var(--text3);margin-top:8px;text-align:center;">
+        v<sub>t</sub> = √(2mg/ρC<sub>d</sub>A) &nbsp; masele mai mari cad mai repede
+      </p>
+    </div>
+    <div class="chart-wrap">
+      <h4>Grafic 4  Viteza în cădere liberă: cu/fără drag</h4>
+      <div id="chartCadere" class="chart-svg"></div>
+      <p style="font-size:.78rem;color:var(--text3);margin-top:8px;text-align:center;">
+        Fără drag: v = g·t (liniar) &nbsp;|&nbsp; Cu drag: v → v<sub>t</sub> (exponențial)
+      </p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h4>Tabel de date  Experiment 1 (Plan înclinat)</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>μ</th><th>Unghi θ</th><th>N [N]</th><th>F<sub>f</sub> [N]</th><th>a [m/s²]</th><th>Comportament</th></tr></thead>
+        <tbody>
+          <tr><td>0.00</td><td>27°</td><td>26.2</td><td>0.0</td><td>4.45</td><td>Alunecare liberă</td></tr>
+          <tr><td>0.10</td><td>27°</td><td>26.2</td><td>2.62</td><td>3.57</td><td>Alunecare accelerată</td></tr>
+          <tr><td>0.15</td><td>27°</td><td>26.2</td><td>3.93</td><td>3.13</td><td>Alunecare accelerată</td></tr>
+          <tr><td>0.30</td><td>27°</td><td>26.2</td><td>7.87</td><td>1.81</td><td>Alunecare lentă</td></tr>
+          <tr><td>tan(27°)≈0.51</td><td>27°</td><td>26.2</td><td>13.3</td><td>0.00</td><td>Limita de alunecare</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="font-size:.82rem;color:var(--text3);margin-top:8px;">
+      * m = 3 kg, g = 9.81 m/s², θ = 27°. Corpul alunecă dacă μ &lt; tan θ.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 6. APLICATII                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="aplicatii">
+  <div class="section-title-row">
+    <span class="section-nr">6</span>
+    <h2>Aplicații în tehnologie și viața reală</h2>
+  </div>
+
+  <p>
+    Ambele forțe au implicații majore în numeroase domenii ale activității umane  uneori
+    sunt <strong>benefice</strong> (frânarea unui vehicul, parașuta), alteori sunt
+    <strong>nedorite</strong> (uzura motorului, rezistența aerului la viteze mari).
+  </p>
+
+  <div class="app-grid">
+
+    <!-- 1  Transport rutier -->
+    <div class="app-card">
+      <div class="app-card-inner">
+        <div class="app-card-front">
+          <span class="app-icon">🚗</span>
+          <h4>Transport rutier</h4>
+          <p>Frânele, anvelopele și caroseria aerodinamică  toate implică forțe disipative controlate.</p>
+          <span class="app-flip-hint">hover pentru detalii ↻</span>
+        </div>
+        <div class="app-card-back">
+          <div class="app-back-title">📐 Fizica frânării</div>
+          <div class="app-back-body">
+            <p><span class="app-back-formula">F<sub>f</sub> = μ · N = μ · mg</span><br>
+            Frână disc: μ ≈ 0.40 – 0.55. La m = 1 400 kg:<br>
+            <span class="app-back-num">F<sub>f</sub> ≈ 0.5 × 1400 × 9.81 ≈ 6 867 N</span></p>
+            <p><span class="app-back-formula">F<sub>drag</sub> = ½ · ρ · C<sub>d</sub> · A · v²</span><br>
+            Ferrari (C<sub>d</sub>=0.28, A=2.1 m²) la 100 km/h:<br>
+            <span class="app-back-num">F<sub>d</sub> ≈ 145 N &nbsp;|&nbsp; P = F·v ≈ 4 kW</span></p>
+            <p>La 200 km/h, drag crește de 4× → <span class="app-back-num">≈ 580 N, P ≈ 32 kW</span> pierdut.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2  Aviație -->
+    <div class="app-card">
+      <div class="app-card-inner">
+        <div class="app-card-front">
+          <span class="app-icon">✈️</span>
+          <h4>Aviație</h4>
+          <p>Optimizarea C<sub>d</sub> și a raportului L/D determină eficiența și consumul unui avion.</p>
+          <span class="app-flip-hint">hover pentru detalii ↻</span>
+        </div>
+        <div class="app-card-back">
+          <div class="app-back-title">📐 Aerodinamică aplicată</div>
+          <div class="app-back-body">
+            <p><span class="app-back-formula">F<sub>drag</sub> = ½ · ρ · C<sub>d</sub> · A · v²</span><br>
+            Boeing 737 (C<sub>d</sub>=0.031, A=122 m²) la v=250 m/s:<br>
+            <span class="app-back-num">F<sub>d</sub> ≈ 145 000 N (145 kN)</span></p>
+            <p>Raport sustentație/rezistență:<br>
+            <span class="app-back-formula">L/D ≈ 17 : 1</span><br>
+            Înseamnă că pentru fiecare Newton de drag, avionul generează 17 N lift.</p>
+            <p>Reducerea C<sub>d</sub> cu 10% → <span class="app-back-num">economie ≈ 3–4% combustibil</span> pe zbor.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 3  Sport -->
+    <div class="app-card">
+      <div class="app-card-inner">
+        <div class="app-card-front">
+          <span class="app-icon">⛷️</span>
+          <h4>Sport</h4>
+          <p>Schiori, cicliști, înot  frecarea și drag-ul determină limita fizică a performanței.</p>
+          <span class="app-flip-hint">hover pentru detalii ↻</span>
+        </div>
+        <div class="app-card-back">
+          <div class="app-back-title">📐 Viteză pe pantă</div>
+          <div class="app-back-body">
+            <p>Accelerație schior pe pantă θ=30°, μ=0.03:<br>
+            <span class="app-back-formula">a = g(sin θ − μ cos θ) ≈ 4.64 m/s²</span></p>
+            <p>Viteză terminală (C<sub>d</sub>=0.4, A=0.3 m², m=80 kg):<br>
+            <span class="app-back-formula">v<sub>t</sub> = √(2mg sin θ / ρC<sub>d</sub>A)</span><br>
+            <span class="app-back-num">v<sub>t</sub> ≈ 52 m/s (187 km/h)</span></p>
+            <p>Poziție ghemuită: C<sub>d</sub> scade de la 1.0 → 0.4 → <span class="app-back-num">v<sub>t</sub> crește cu 58%</span>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4  Mecanică -->
+    <div class="app-card">
+      <div class="app-card-inner">
+        <div class="app-card-front">
+          <span class="app-icon">🔩</span>
+          <h4>Mecanică industrială</h4>
+          <p>Rulmenți, lubrifianți și transmisii  ingineria frecării menține motoarele în viață.</p>
+          <span class="app-flip-hint">hover pentru detalii ↻</span>
+        </div>
+        <div class="app-card-back">
+          <div class="app-back-title">📐 Reducerea frecării</div>
+          <div class="app-back-body">
+            <p>Metal pe metal uscat: <span class="app-back-num">μ ≈ 0.30</span><br>
+            Metal + ulei mineral: <span class="app-back-num">μ ≈ 0.005 – 0.02</span><br>
+            Rulment cu bile: <span class="app-back-num">μ<sub>r</sub> ≈ 0.001 – 0.003</span></p>
+            <p>Motor auto: <span class="app-back-num">~15%</span> din energia termică se pierde în frecare internă (pistoane, lagăre).</p>
+            <p>Transmisie cu curea: forța transmisă:<br>
+            <span class="app-back-formula">F<sub>net</sub> = (T<sub>1</sub> − T<sub>2</sub>) = μ·T<sub>2</sub>(e<sup>μθ</sup>−1)</span></p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5  Parașutism -->
+    <div class="app-card">
+      <div class="app-card-inner">
+        <div class="app-card-front">
+          <span class="app-icon">🪂</span>
+          <h4>Parașutism</h4>
+          <p>Parașuta exploatează intenționat rezistența aerului pentru a limita viteza la impact.</p>
+          <span class="app-flip-hint">hover pentru detalii ↻</span>
+        </div>
+        <div class="app-card-back">
+          <div class="app-back-title">📐 Viteza terminală</div>
+          <div class="app-back-body">
+            <p>Fără parașută (C<sub>d</sub>=0.47, A=0.7 m², m=70 kg):<br>
+            <span class="app-back-formula">v<sub>t</sub> = √(2mg / ρC<sub>d</sub>A)</span><br>
+            <span class="app-back-num">v<sub>t</sub> ≈ 56 m/s &nbsp;(202 km/h)</span></p>
+            <p>Cu parașuta deschisă (C<sub>d</sub>=1.3, A=28 m²):<br>
+            <span class="app-back-num">v<sub>t</sub> ≈ 5.5 m/s &nbsp;(20 km/h)</span></p>
+            <p>Reducere de viteză: <span class="app-back-num">×10.2</span>  energia cinetică scade de <span class="app-back-num">104×</span> (E ∝ v²).</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6  Construcții -->
+    <div class="app-card">
+      <div class="app-card-inner">
+        <div class="app-card-front">
+          <span class="app-icon">🏗️</span>
+          <h4>Construcții</h4>
+          <p>Frecarea dintre fundație și sol asigură stabilitatea structurală împotriva forțelor laterale.</p>
+          <span class="app-flip-hint">hover pentru detalii ↻</span>
+        </div>
+        <div class="app-card-back">
+          <div class="app-back-title">📐 Stabilitate structurală</div>
+          <div class="app-back-body">
+            <p>Forța maximă de alunecare rezistată:<br>
+            <span class="app-back-formula">F<sub>s</sub> = μ · N = μ · Mg</span><br>
+            Clădire 10 000 t, μ(beton/sol)=0.65:<br>
+            <span class="app-back-num">F<sub>s</sub> = 0.65 × 10<sup>7</sup> × 9.81 ≈ 63.7 MN</span></p>
+            <p>Ancorele de rocă funcționează prin frecare laterală:<br>
+            <span class="app-back-formula">F<sub>ancorare</sub> = μ · σ<sub>n</sub> · A<sub>contact</sub></span><br>
+            Capacitate tipică: <span class="app-back-num">500 – 2 000 kN / ancoră</span>.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="card">
+    <h4>Roluri utile vs. nedorite ale forțelor disipative</h4>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Forța</th><th>Rol util</th><th>Rol nedorit</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><strong>Forța de frecare</strong></td>
+            <td>Mersul pe jos, frânare, scris cu pixul, cuiele în lemn, transmisii</td>
+            <td>Uzura pieselor, pierderile de energie în motoare, căldura excesivă</td>
+          </tr>
+          <tr>
+            <td><strong>Rezistența mediului</strong></td>
+            <td>Parașuta, frânele aerodinamice ale avioanelor, răcirea prin convecție</td>
+            <td>Consum suplimentar de combustibil, limitarea vitezei maxime, aterizare dificilă pe Marte</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 7. CONCLUZII                                                              -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="concluzii">
+  <div class="section-title-row">
+    <span class="section-nr">7</span>
+    <h2>Concluzii</h2>
+  </div>
+
+  <ul class="concl-list">
+    <li>
+      <span class="concl-num">1</span>
+      <span>Forța de frecare și rezistența mediului sunt ambele forțe <strong>disipative</strong>,
+      care se opun mișcării și transformă energia cinetică în căldură  dar prin mecanisme
+      complet diferite.</span>
+    </li>
+    <li>
+      <span class="concl-num">2</span>
+      <span>Forța de frecare respectă legea Coulomb: <strong>F<sub>f</sub> = μ·N</strong>,
+      fiind independentă de viteză și de aria de contact. Coeficientul μ depinde exclusiv
+      de natura suprafețelor.</span>
+    </li>
+    <li>
+      <span class="concl-num">3</span>
+      <span>Rezistența mediului crește pătratic cu viteza: <strong>F<sub>d</sub> ∝ v²</strong>.
+      Aceasta implică existența vitezei terminale, unde forța de drag echilibrează greutatea.
+      Viteza terminală este mai mare pentru corpuri masive și/sau aerodinamice.</span>
+    </li>
+    <li>
+      <span class="concl-num">4</span>
+      <span>Experimentul pe planul înclinat a confirmat că frecarea rămâne constantă în
+      timp și că accelerația este uniformă  graficul v(t) este liniar, spre deosebire
+      de căderea cu drag care produce o curbă exponențială.</span>
+    </li>
+    <li>
+      <span class="concl-num">5</span>
+      <span>Aplicațiile practice ale acestor forțe variaza: de la transporturi și
+      sport la construcții și medicină. Înțelegerea lor permite proiectarea sistemelor mai
+      eficiente  motoare cu frecare redusă sau vehicule cu profiluri aerodinamice optime.</span>
+    </li>
+    <li>
+      <span class="concl-num">6</span>
+      <span>Simulatorul fizic 2D utilizat în cadrul experimentelor a confirmat predicțiile
+      teoretice și a oferit o vizualizare intuitivă a vectorilor de forță, accelerație și
+      viteză  un instrument valoros pentru înțelegerea fenomenelor disipative.</span>
+    </li>
+  </ul>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- 8. BIBLIOGRAFIE                                                           -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="section" id="bibliografie">
+  <div class="section-title-row">
+    <span class="section-nr">8</span>
+    <h2>Bibliografie</h2>
+  </div>
+
+  <ul class="bib-list">
+    <li data-n="1">Manual de Fizică, Clasa a IX‑a  Editura Didactică și Pedagogică, București, 2024.</li>
+    <li data-n="2">Halliday, D., Resnick, R., Walker, J.  <em>Fundamentals of Physics</em>, 10th ed., Wiley, 2013.</li>
+    <li data-n="3">Serway, R.A., Jewett, J.W.  <em>Physics for Scientists and Engineers</em>, 9th ed., Cengage, 2014.</li>
+    <li data-n="4">NASA  <em>Drag Equation</em>, Glenn Research Center, <code>www.grc.nasa.gov</code>, accesat 2026.</li>
+    <li data-n="5">Feynman, R.P.  <em>The Feynman Lectures on Physics</em>, Vol. I, Caltech, 1963 (ediție online).</li>
+    <li data-n="6">Wikipedia  <em>Coulomb's Law of Friction</em>, <em>Drag (physics)</em>, accesat 2026.</li>
+    <li data-n="7">Simulator Fizică 2D  Proiect didactic interactiv, realizat cu Planck.js / Box2D, 2026.</li>
+  </ul>
+</div>
+
+</div><!-- /.page-wrap -->
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- SIMULATOR LINK                                                            -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<div class="sim-cta-wrap">
+  <div class="sim-cta-card">
+    <div class="sim-cta-icon">⚛️</div>
+    <h2 class="sim-cta-title">Sandbox Fizică 2D</h2>
+    <p class="sim-cta-desc">
+      Simulator interactiv complet  adaugă obiecte, modifică gravitația,<br>
+      testează experimente cu frecare, resort, scripete și multe altele.
+    </p>
+    <a href="/" class="sim-cta-btn">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polygon points="5,3 19,12 5,21"/>
+      </svg>
+      Deschide Simulatorul
+    </a>
+    <p class="sim-cta-hint">Se deschide în aceeași fereastră · butonul ← Înapoi te aduce la referat</p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- EXPERIMENT MODALS                                                         -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+
+<!-- Modal EXP 1  Plan înclinat -->
+<div class="exp-modal-backdrop" id="modal-plan_inclinat_referat">
+  <div class="exp-modal">
+    <div class="exp-modal-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="exp-modal-dots">
+          <div class="exp-modal-dot"></div><div class="exp-modal-dot"></div><div class="exp-modal-dot"></div>
+        </div>
+        <span class="exp-modal-title" id="modal-title-plan_inclinat_referat">Plan înclinat  Forța de frecare</span>
+      </div>
+      <button class="exp-modal-close" onclick="inchideExp('plan_inclinat_referat')">✕ Închide</button>
+    </div>
+    <div class="exp-modal-body">
+      <div class="exp-sim-panel">
+        <div class="exp-sim-label">Simulator fizic 2D</div>
+        <iframe class="exp-sim-frame" id="iframe-plan_inclinat_referat"
+          src="about:blank" title="Simulator plan înclinat"></iframe>
+      </div>
+      <div class="exp-chart-panel">
+        <div class="exp-chart-label">Grafic  Forța de frecare</div>
+        <div class="exp-chart-inner">
+          <div id="chart-frecare" class="chart-svg"></div>
+          <div class="exp-obs">
+            <strong>Observație:</strong> Forța de frecare F<sub>f</sub> = μ·N este proporțională
+            cu forța normală și <em>independentă de viteză</em>. Pe grafic, dependența este
+            liniară: panta dreptei = μ (coeficientul de frecare).<br><br>
+            <strong>Pe planul înclinat:</strong> N = mg·cos θ, deci frecarea crește odată cu
+            masa corpului, dar scade pe suprafețe înclinate puternic.
+          </div>
+          <div id="chart-frecare-vt" class="chart-svg" style="margin-top:14px;"></div>
+          <div class="exp-obs" style="margin-top:8px;">
+            <strong>Viteza vs. timp:</strong> Dependența liniară confirmă accelerație uniformă 
+            frecarea este constantă, deci mișcarea este uniform accelerată.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal EXP 2  Parașuta -->
+<div class="exp-modal-backdrop" id="modal-parasuta_referat">
+  <div class="exp-modal">
+    <div class="exp-modal-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div class="exp-modal-dots">
+          <div class="exp-modal-dot"></div><div class="exp-modal-dot"></div><div class="exp-modal-dot"></div>
+        </div>
+        <span class="exp-modal-title" id="modal-title-parasuta_referat">Cădere cu rezistența aerului</span>
+      </div>
+      <button class="exp-modal-close" onclick="inchideExp('parasuta_referat')">✕ Închide</button>
+    </div>
+    <div class="exp-modal-body">
+      <div class="exp-sim-panel">
+        <div class="exp-sim-label">Simulator fizic 2D</div>
+        <iframe class="exp-sim-frame" id="iframe-parasuta_referat"
+          src="about:blank" title="Simulator cădere liberă"></iframe>
+      </div>
+      <div class="exp-chart-panel">
+        <div class="exp-chart-label">Grafic  Rezistența mediului</div>
+        <div class="exp-chart-inner">
+          <div id="chart-drag" class="chart-svg"></div>
+          <div class="exp-obs">
+            <strong>Observație:</strong> F<sub>d</sub> = k·v² crește pătratic cu viteza.
+            Când F<sub>d</sub> = mg (intersecția cu linia orizontală), corpul atinge
+            <em>viteza terminală</em>  accelerația devine zero.<br><br>
+            <strong>Diferență față de frecare:</strong> Spre deosebire de frecare, rezistența
+            nu este constantă  crește continuu cu viteza.
+          </div>
+          <div id="chart-drag-vt" class="chart-svg" style="margin-top:14px;"></div>
+          <div class="exp-obs" style="margin-top:8px;">
+            <strong>Viteza vs. timp:</strong> Curbă exponențială asimptotică  viteza tinde
+            spre v<sub>t</sub> dar nu o depășește niciodată.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<!-- SCRIPTS                                                                   -->
+<!-- ══════════════════════════════════════════════════════════════════════════ -->
+<script>
+// ── Experiment modal logic ────────────────────────────────────────────────────
+
+const SIM_BASE = window.location.origin + (window.location.pathname.replace(/\/[^/]*$/, '/'))
+
+function deschideExp(preset, titlu, chartId) {
+  const modal = document.getElementById('modal-' + preset)
+  const iframe = document.getElementById('iframe-' + preset)
+  if (!modal || !iframe) return
+
+  // Load iframe with minimal mode + preset
+  const params = new URLSearchParams({ preset, minimal: 'true', autoplay: 'true' })
+  iframe.src = '/?' + params.toString()
+
+  modal.classList.add('open')
+  document.body.style.overflow = 'hidden'
+
+  // Draw charts when modal opens (SVG  already injected on DOMContentLoaded)
+}
+
+function inchideExp(preset) {
+  const modal = document.getElementById('modal-' + preset)
+  const iframe = document.getElementById('iframe-' + preset)
+  if (!modal || !iframe) return
+  modal.classList.remove('open')
+  iframe.src = 'about:blank'
+  document.body.style.overflow = ''
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.exp-modal-backdrop.open').forEach(m => {
+      const id = m.id.replace('modal-', '')
+      inchideExp(id)
+    })
+  }
+})
+
+// ── SVG Chart System ──────────────────────────────────────────────────────────
+
+const K = {
+  bg:'#161b22', grid:'#21262d', axis:'#30363d',
+  txt:'#6e7681', lbl:'#8b949e',
+  blue:'#58a6ff', green:'#3fb950', red:'#f85149',
+  amber:'#e3b341', purple:'#a371f7', cyan:'#76e3a8', muted:'#3d4f61'
+}
+
+function mkSVG({ W=440, H=260, pl=52, pr=20, pt=22, pb=44,
+                 xMax, yMax, xLabel, yLabel, xTk=5, yTk=5,
+                 curves=[], legends=[], annots=[] }) {
+  const cw = W-pl-pr, ch = H-pt-pb
+  const px = x => +(pl + Math.max(0,Math.min(1, x/xMax)) * cw).toFixed(1)
+  const py = y => +(pt + ch - Math.max(0,Math.min(1, y/yMax)) * ch).toFixed(1)
+  let s = `<rect width="${W}" height="${H}" rx="8" fill="${K.bg}"/>`
+  // grid + tick labels
+  for (let i=0; i<=yTk; i++) {
+    const yv = yMax*i/yTk, sy = py(yv)
+    s += `<line x1="${pl}" y1="${sy}" x2="${pl+cw}" y2="${sy}" stroke="${K.grid}" stroke-width="0.7"/>`
+    s += `<text x="${pl-6}" y="${+sy+4}" text-anchor="end" fill="${K.txt}" font-size="9" font-family="monospace">${Number.isInteger(yv)?yv:yv.toFixed(1)}</text>`
+  }
+  for (let i=0; i<=xTk; i++) {
+    const xv = xMax*i/xTk, sx = px(xv)
+    s += `<line x1="${sx}" y1="${pt}" x2="${sx}" y2="${pt+ch}" stroke="${K.grid}" stroke-width="0.7"/>`
+    s += `<text x="${sx}" y="${pt+ch+15}" text-anchor="middle" fill="${K.txt}" font-size="9" font-family="monospace">${Number.isInteger(xv)?xv:xv.toFixed(1)}</text>`
+  }
+  // axes
+  s += `<line x1="${pl}" y1="${pt}" x2="${pl}" y2="${pt+ch}" stroke="${K.axis}" stroke-width="1.5"/>`
+  s += `<line x1="${pl}" y1="${pt+ch}" x2="${pl+cw}" y2="${pt+ch}" stroke="${K.axis}" stroke-width="1.5"/>`
+  // axis labels
+  s += `<text x="${pl+cw/2}" y="${H-5}" text-anchor="middle" fill="${K.lbl}" font-size="10.5" font-family="DM Sans,sans-serif">${xLabel}</text>`
+  s += `<text x="11" y="${pt+ch/2}" text-anchor="middle" fill="${K.lbl}" font-size="10.5" font-family="DM Sans,sans-serif" transform="rotate(-90,11,${pt+ch/2})">${yLabel}</text>`
+  // curves
+  for (const c of curves) {
+    const pts = c.pts.map(([x,y])=>`${px(x)},${py(y)}`).join(' ')
+    const da = c.dash ? ` stroke-dasharray="${c.dash}"` : ''
+    s += `<polyline points="${pts}" fill="none" stroke="${c.col}" stroke-width="${c.lw||2}" stroke-linejoin="round" stroke-linecap="round"${da}/>`
+  }
+  // annotations
+  for (const a of annots)
+    s += `<text x="${px(a.x)+2}" y="${py(a.y)-4}" fill="${a.col||K.lbl}" font-size="9" font-family="monospace">${a.t}</text>`
+  // legend
+  let lx=pl+10, ly=pt+13
+  for (const [col,lbl] of legends) {
+    s += `<line x1="${lx}" y1="${ly}" x2="${lx+18}" y2="${ly}" stroke="${col}" stroke-width="2.2"/>`
+    s += `<text x="${lx+22}" y="${ly+4}" fill="${K.lbl}" font-size="9.5" font-family="DM Sans,sans-serif">${lbl}</text>`
+    ly += 16
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;border-radius:8px">${s}</svg>`
+}
+
+function range(n, fn) { return Array.from({length:n+1},(_,i)=>fn(i/n)) }
+
+// 1  Ff vs N
+function svgFfN(W=440, H=260) {
+  return mkSVG({ W, H, xMax:50, yMax:30, xLabel:'N [N]', yLabel:'Ff [N]',
+    curves: [
+      { pts:[[0,0],[50,0.03*50]], col:K.cyan },
+      { pts:[[0,0],[50,0.20*50]], col:K.green },
+      { pts:[[0,0],[50,0.50*50]], col:K.amber },
+      { pts:[[0,0],[50*30/45,30]], col:K.red },  // μ=0.90 clipped at yMax
+    ],
+    legends:[[K.cyan,'μ = 0.03 (gheață)'],[K.green,'μ = 0.20'],[K.amber,'μ = 0.50'],[K.red,'μ = 0.90 (cauciuc)']]
+  })
+}
+
+// 2  Fd vs v
+function svgFdV(W=440, H=260) {
+  const g=9.81
+  const quad = (k) => range(60, t => { const v=t*20; return [v, k*v*v] })
+  return mkSVG({ W, H, xMax:20, yMax:50, xLabel:'v [m/s]', yLabel:'Fd [N]', xTk:4,
+    curves: [
+      { pts:[[0,g],[20,g]],   col:K.muted, lw:1, dash:'4,3' },
+      { pts:[[0,5*g],[20,5*g]], col:K.muted, lw:1, dash:'4,3' },
+      { pts:quad(0.05), col:K.cyan },
+      { pts:quad(0.12), col:K.purple },
+      { pts:quad(0.25), col:K.red },
+    ],
+    legends:[[K.cyan,'Cd mic (bilă)'],[K.purple,'Cd mediu'],[K.red,'Cd mare (parașută)']],
+    annots:[
+      { x:0.8, y:g+2,   t:'G(1kg)=10N',  col:K.muted },
+      { x:0.8, y:5*g+2, t:'G(5kg)=49N',  col:K.muted },
+    ]
+  })
+}
+
+// 3  vt vs m
+function svgVtM(W=440, H=260) {
+  const g=9.81, k=0.05
+  return mkSVG({ W, H, xMax:20, yMax:80, xLabel:'m [kg]', yLabel:'vt [m/s]', xTk:4, yTk:4,
+    curves:[{ pts:range(80, t=>{ const m=t*20+0.1; return [m,Math.min(Math.sqrt(m*g/k),80)] }), col:K.blue, lw:2.5 }],
+    annots:[{ x:1.5, y:72, t:'vt = √(mg/k)', col:K.lbl }]
+  })
+}
+
+// 4  v(t) cădere cu / fără drag
+function svgCadere(W=440, H=260) {
+  const g=9.81
+  const mk = (m,k) => range(80, t=>{ const x=t*6; const vt=k>0?Math.sqrt(m*g/k):Infinity; return [x,Math.min(k>0?vt*Math.tanh(g*x/vt):g*x,60)] })
+  return mkSVG({ W, H, xMax:6, yMax:60, xLabel:'t [s]', yLabel:'v [m/s]', xTk:3, yTk:4,
+    curves:[{ pts:mk(0,0), col:K.blue },{ pts:mk(5,0.05), col:K.red },{ pts:mk(1,0.05), col:K.green }],
+    legends:[[K.blue,'Fără drag (ideal)'],[K.red,'Cu drag, m=5 kg'],[K.green,'Cu drag, m=1 kg']]
+  })
+}
+
+// 5  v(t) plan înclinat  liniar
+function svgVtLin(W=380, H=200) {
+  return mkSVG({ W, H, xMax:4, yMax:20, xLabel:'t [s]', yLabel:'v [m/s]', xTk:4, yTk:4,
+    curves:[
+      { pts:[[0,0],[4,4.45*4]], col:K.blue },
+      { pts:[[0,0],[4,3.13*4]], col:K.green },
+      { pts:[[0,0],[4,1.81*4]], col:K.red },
+    ],
+    legends:[[K.blue,'μ=0 (liber)'],[K.green,'μ=0.15'],[K.red,'μ=0.30']]
+  })
+}
+
+// 6  v(t) exponențial  parașută
+function svgVtExp(W=380, H=200) {
+  return svgCadere(W, H)
+}
+
+// Inject all charts
+function injectCharts() {
+  const set = (id, html) => { const el=document.getElementById(id); if(el) el.innerHTML=html }
+  set('chartFfVsN',    svgFfN())
+  set('chartFdVsV',    svgFdV())
+  set('chartVtVsM',    svgVtM())
+  set('chartCadere',   svgCadere())
+  set('chart-frecare', svgFfN(380,210))
+  set('chart-frecare-vt', svgVtLin())
+  set('chart-drag',    svgFdV(380,210))
+  set('chart-drag-vt', svgVtExp(380,200))
+}
+
+window.addEventListener('DOMContentLoaded', injectCharts)
+
+// ── Interactive calculators ───────────────────────────────────────────────────
+
+function syncSlider(sliderId, numId, min, max) {
+  const v = parseFloat(document.getElementById(numId).value) || 0
+  const clamped = Math.max(min, Math.min(max, v))
+  document.getElementById(sliderId).value = clamped
+}
+
+function fmt(n) {
+  if (n === 0) return '0'
+  const abs = Math.abs(n)
+  if (abs >= 10000 || (abs > 0 && abs < 0.001)) {
+    const exp = Math.floor(Math.log10(abs))
+    const coef = (n / Math.pow(10, exp)).toFixed(2)
+    // strip trailing .00 or x.00 → x
+    const coefClean = coef.replace(/\.?0+$/, '')
+    return coefClean + ' × 10<sup>' + exp + '</sup>'
+  }
+  if (abs >= 100) return n.toFixed(1)
+  if (abs >= 1)   return n.toFixed(2)
+  return n.toFixed(4)
+}
+
+function calcFf() {
+  const mu = parseFloat(document.getElementById('ff-mu').value)
+  const N  = parseFloat(document.getElementById('ff-N').value)
+  document.getElementById('ff-mu-n').value = mu
+  document.getElementById('ff-N-n').value  = N
+  const Ff = mu * N
+  document.getElementById('ff-result').innerHTML = fmt(Ff)
+}
+
+function calcFd() {
+  const rho = parseFloat(document.getElementById('fd-rho').value)
+  const Cd  = parseFloat(document.getElementById('fd-cd').value)
+  const A   = parseFloat(document.getElementById('fd-A').value)
+  const v   = parseFloat(document.getElementById('fd-v').value)
+  document.getElementById('fd-cd-n').value = Cd
+  document.getElementById('fd-A-n').value  = A
+  document.getElementById('fd-v-n').value  = v
+  const Fd = 0.5 * rho * Cd * A * v * v
+  document.getElementById('fd-result').innerHTML = fmt(Fd)
+}
+
+function calcVt() {
+  const m   = parseFloat(document.getElementById('vt-m').value)
+  const g   = parseFloat(document.getElementById('vt-g').value)
+  const rho = parseFloat(document.getElementById('vt-rho').value)
+  const Cd  = parseFloat(document.getElementById('vt-cd').value)
+  const A   = parseFloat(document.getElementById('vt-A').value)
+  document.getElementById('vt-m-n').value   = m
+  document.getElementById('vt-g-n').value   = g
+  document.getElementById('vt-rho-n').value = rho
+  document.getElementById('vt-cd-n').value  = Cd
+  document.getElementById('vt-A-n').value   = A
+  const denom = rho * Cd * A
+  if (denom <= 0) return
+  const vt = Math.sqrt(2 * m * g / denom)
+  document.getElementById('vt-result').innerHTML = fmt(vt)
+  document.getElementById('vt-kmh').innerHTML = '(≈ ' + fmt(vt * 3.6) + ' km/h)'
+}
+
+// Init calculators with correct starting values
+window.addEventListener('DOMContentLoaded', () => { calcFf(); calcFd(); calcVt() })
+
+// ── Reading progress bar ──────────────────────────────────────────────────────
+;(function() {
+  const bar = document.getElementById('progress-bar')
+  if (!bar) return
+  document.addEventListener('scroll', () => {
+    const h = document.documentElement
+    const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100
+    bar.style.width = Math.min(100, pct).toFixed(1) + '%'
+  }, { passive: true })
+})()
+
+</script>
+
+</body>
+</html>
