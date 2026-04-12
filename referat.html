@@ -1531,7 +1531,7 @@
       Simulator interactiv complet  adaugă obiecte, modifică gravitația,<br>
       testează experimente cu frecare, resort, scripete și multe altele.
     </p>
-    <a href="/" class="sim-cta-btn">
+    <a href="./index.html" class="sim-cta-btn">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
         <polygon points="5,3 19,12 5,21"/>
       </svg>
@@ -1640,7 +1640,7 @@ function deschideExp(preset, titlu, chartId) {
 
   // Load iframe with minimal mode + preset
   const params = new URLSearchParams({ preset, minimal: 'true', autoplay: 'true' })
-  iframe.src = '/?' + params.toString()
+  iframe.src = './index.html?' + params.toString()
 
   modal.classList.add('open')
   document.body.style.overflow = 'hidden'
